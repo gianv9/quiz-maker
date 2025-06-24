@@ -1,6 +1,277 @@
-# AWS Learning Game - Setup Guide
+# 🎯 Quiz Maker - Interactive Learning Platform
 
-## Quick Start (5 minutes)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://www.docker.com/)
+[![Python](https://img.shields.io/badge/Python-3.11-green?logo=python)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.3.3-lightgrey?logo=flask)](https://flask.palletsprojects.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)](https://www.postgresql.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+A modern, containerized quiz platform for interactive learning experiences. Currently featuring AWS knowledge assessments with plans to expand into a multi-topic educational platform.
+
+![AWS Quiz Demo](https://via.placeholder.com/800x400/667eea/ffffff?text=AWS+Knowledge+Quest+Demo)
+
+## 🌟 Features
+
+### Current Features
+- ✅ **Interactive Quiz Interface** - Clean, responsive UI with real-time feedback
+- ✅ **Multiple Difficulty Levels** - Easy, Medium, and Hard questions
+- ✅ **Topic-Based Learning** - AWS Shared Responsibility, Services, Storage, Security, Well-Architected
+- ✅ **Progress Tracking** - Detailed statistics and performance analytics
+- ✅ **Containerized Deployment** - Full Docker support for easy deployment
+- ✅ **Persistent Storage** - PostgreSQL database for scores and questions
+- ✅ **Mixed Review Mode** - Random questions across all topics
+
+### 🚀 Planned Features
+- 🔄 **Multi-Topic Support** - Expand beyond AWS to other technology domains
+- 🔄 **Admin Panel** - CRUD interface for managing quizzes, questions, and topics
+- 🔄 **Question Generator** - AI-powered question generation for new topics
+- 🔄 **Analytics Dashboard** - Metabase integration for advanced data analysis
+- 🔄 **User Management** - Registration, profiles, and progress tracking
+- 🔄 **Export/Import** - Question bank management and sharing
+- 🔄 **Testing Suite** - Comprehensive unit and integration tests
+- 🔄 **CI/CD Pipeline** - Automated testing, building, and deployment
+- 🔄 **API Documentation** - OpenAPI/Swagger integration
+- 🔄 **Cloud Deployment** - Production-ready deployment guides
+
+## 🛠 Tech Stack
+
+- **Backend**: Python 3.11, Flask 2.3.3
+- **Database**: PostgreSQL 15
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Containerization**: Docker & Docker Compose
+- **Testing**: pytest (planned), coverage.py (planned)
+- **CI/CD**: GitHub Actions (planned)
+- **Code Quality**: flake8, black (planned)
+- **Future**: Metabase for analytics
+
+## 📋 Prerequisites
+
+- Docker 20.0+ 
+- Docker Compose 1.25+
+- 2GB RAM minimum
+- Modern web browser
+
+## ⚡ Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/quiz-maker.git
+cd quiz-maker
+
+# Start the application
+docker-compose up --build
+
+# Access the application
+open http://localhost:5000
+```
+
+## 📖 Usage
+
+1. **Choose a Topic**: Select from AWS topics or Mixed Review
+2. **Select Difficulty**: Easy (10 pts), Medium (20 pts), or Hard (30 pts)
+3. **Take the Quiz**: Answer questions with instant feedback
+4. **Review Results**: View explanations and study resources
+5. **Track Progress**: Check statistics and performance trends
+
+## 🏗 Architecture
+
+```
+quiz-maker/
+├── app.py                 # Flask application
+├── requirements.txt       # Python dependencies
+├── Dockerfile            # Container definition
+├── docker-compose.yml    # Multi-container setup
+├── init.sql             # Database initialization
+├── templates/           # HTML templates
+│   ├── index.html       # Main menu
+│   ├── game.html        # Quiz interface
+│   └── results.html     # Statistics page
+└── README.md           # This file
+```
+
+### Database Schema
+
+- **questions**: Stores quiz questions with topics, difficulty, and references
+- **scores**: Tracks user performance and statistics
+
+## 🎯 Development
+
+### Adding New Questions
+
+```sql
+INSERT INTO questions (topic, difficulty, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation, study_references) VALUES
+('new-topic', 'easy', 'Your question here?', 'Option A', 'Option B', 'Option C', 'Option D', 0, 'Explanation here', 'Reference 1|Reference 2');
+```
+
+### Development Commands
+
+```bash
+# View logs
+docker-compose logs
+
+# Access database
+docker-compose exec db psql -U postgres -d awsgame
+
+# Rebuild after changes
+docker-compose up --build
+
+# Reset database
+docker-compose down -v && docker-compose up --build
+
+# Run tests (planned)
+pytest tests/
+pytest tests/ --cov=app --cov-report=html
+
+# Code quality checks (planned)
+flake8 app.py
+black app.py --check
+```
+
+### Environment Variables
+
+```bash
+DB_HOST=db
+DB_NAME=awsgame
+DB_USER=postgres
+DB_PASSWORD=password
+SECRET_KEY=your-secret-key-here
+```
+
+## 🧪 Testing & CI/CD
+
+### Testing Strategy (Planned)
+- **Unit Tests**: pytest for testing individual functions and components
+- **Integration Tests**: API endpoint testing with test database
+- **Coverage Reports**: Code coverage tracking and reporting
+- **Test Data**: Factory patterns for generating test questions and scores
+- **Mocking**: Database and external service mocking for isolated tests
+
+### CI/CD Pipeline (Planned)
+- **GitHub Actions**: Automated workflows for testing and deployment
+- **Pull Request Checks**: Automated testing on all PRs
+- **Code Quality**: Linting with flake8/black, security scanning
+- **Container Testing**: Docker image building and testing
+- **Deployment**: Automated deployment to staging and production environments
+- **Monitoring**: Health checks and performance monitoring
+
+### Planned Testing Structure
+```
+tests/
+├── unit/
+│   ├── test_app.py
+│   ├── test_database.py
+│   └── test_utils.py
+├── integration/
+│   ├── test_api.py
+│   ├── test_quiz_flow.py
+│   └── test_database_integration.py
+├── fixtures/
+│   └── test_data.py
+└── conftest.py
+```
+
+## 🚀 Deployment
+
+This project is designed for easy deployment on various platforms:
+
+- **Development**: Docker Compose (current setup)
+- **Production**: Planned support for AWS ECS, Kubernetes, Railway, etc.
+- **Analytics**: Metabase integration for advanced reporting
+
+## 📊 Analytics & Monitoring
+
+Future Metabase dashboard will include:
+- Quiz completion rates by topic and difficulty
+- Learning progress trends
+- Question difficulty analysis
+- User engagement metrics
+
+## 🤝 Contributing
+
+Contributions are welcome! This is a public repository used for:
+- Learning and experimentation
+- Testing deployment strategies
+- Practicing SQL and data analysis
+- Demonstrating containerized applications
+
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Write tests for new functionality (when testing is implemented)
+4. Ensure all tests pass and maintain code coverage
+5. Commit your changes following commit conventions
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Commit Convention
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/) with [Gitmoji](https://gitmoji.dev/):
+
+```bash
+🎉 feat: add new quiz topic
+🐛 fix: resolve database connection issue
+📝 docs: update API documentation
+♻️ refactor: improve question loading logic
+```
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🗺 Roadmap
+
+### Phase 1: Core Platform (Current)
+- [x] Basic quiz functionality
+- [x] Docker containerization
+- [x] AWS topic questions
+- [x] Statistics tracking
+
+### Phase 2: Development Best Practices (Next)
+- [ ] Unit testing with pytest
+- [ ] Integration testing for API endpoints
+- [ ] CI/CD pipeline with GitHub Actions
+- [ ] Code coverage reporting
+- [ ] Automated testing on pull requests
+- [ ] Production deployment automation
+
+### Phase 3: Platform Expansion (Following)
+- [ ] Admin panel for question management
+- [ ] Multi-topic support architecture
+- [ ] User authentication system
+- [ ] API endpoints for external integrations
+
+### Phase 4: Advanced Features (Future)
+- [ ] AI-powered question generation
+- [ ] Metabase analytics integration
+- [ ] Cloud deployment automation
+- [ ] Performance optimizations
+
+### Phase 4: Scale & Community (Long-term)
+- [ ] Community-contributed questions
+- [ ] Advanced learning paths
+- [ ] Integration with learning management systems
+- [ ] Mobile application
+
+## 📞 Support
+
+- 📧 Email: [your-email@domain.com]
+- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/quiz-maker/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/quiz-maker/discussions)
+
+## 🙏 Acknowledgments
+
+- AWS documentation and best practices
+- Flask and PostgreSQL communities
+- Docker for containerization
+- Open source contributors
+
+---
+
+## 📋 Detailed Setup Guide
+
+<details>
+<summary>Click to expand detailed installation instructions</summary>
 
 ### 1. Install Docker and Docker Compose
 ```bash
@@ -21,114 +292,26 @@ docker --version
 docker-compose --version
 ```
 
-### 2. Create the project structure
+### 2. Clone and Setup
 ```bash
-# Create project directory
-mkdir aws-game && cd aws-game
+# Clone repository
+git clone https://github.com/yourusername/quiz-maker.git
+cd quiz-maker
 
-# Create templates directory
-mkdir templates
+# Verify file structure
+ls -la
 ```
 
-### 3. Create the files
-
-Copy the code from the artifacts above into these files:
-
+### 3. Run Application
 ```bash
-# Main application
-nano app.py              # Copy Python code
-nano requirements.txt    # Copy requirements
-nano Dockerfile          # Copy Dockerfile  
-nano docker-compose.yml  # Copy docker-compose
-nano init.sql           # Copy SQL initialization
-
-# Templates
-nano templates/index.html    # Copy index template
-nano templates/game.html     # Copy game template  
-nano templates/results.html  # Copy results template
-```
-
-### 4. Run the application
-```bash
-# Build and start the containers
+# Build and start containers
 docker-compose up --build
 
 # Wait for startup messages, then open browser to:
 # http://localhost:5000
 ```
 
-## File Structure
-```
-aws-game/
-├── app.py                 # Flask application
-├── requirements.txt       # Python dependencies
-├── Dockerfile            # Container definition
-├── docker-compose.yml    # Multi-container setup
-├── init.sql             # Database initialization
-└── templates/
-    ├── index.html       # Main menu
-    ├── game.html        # Quiz interface
-    └── results.html     # Statistics page
-```
-
-## How it works
-
-### Architecture
-- **Flask Web App**: Serves HTML and provides REST API
-- **PostgreSQL Database**: Stores questions, answers, and user scores
-- **Docker Compose**: Orchestrates both containers with networking
-
-### Database Schema
-- `questions` table: Stores quiz questions with topics/difficulty
-- `scores` table: Tracks user performance and statistics
-
-### Key Features
-- ✅ **Portable**: Runs anywhere with Docker
-- ✅ **Simple**: Minimal code, easy to modify
-- ✅ **Persistent**: Scores saved in PostgreSQL
-- ✅ **Scalable**: Easy to add new questions/topics
-
-## Adding Questions
-
-Add questions directly to the database:
-```sql
-INSERT INTO questions (topic, difficulty, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation, references) VALUES
-('new-topic', 'easy', 'Your question here?', 'Option A', 'Option B', 'Option C', 'Option D', 0, 'Explanation here', 'Reference 1|Reference 2');
-```
-
-## Development Commands
-
-```bash
-# View logs
-docker-compose logs
-
-# Stop containers
-docker-compose down
-
-# Rebuild after code changes
-docker-compose up --build
-
-# Access database directly
-docker-compose exec db psql -U postgres -d awsgame
-
-# Reset database
-docker-compose down -v && docker-compose up --build
-```
-
-## Customization
-
-### Add new topics:
-1. Insert questions in `init.sql` with new topic name
-2. Questions appear automatically in the UI
-
-### Change styling:
-- Edit CSS in the HTML templates
-- All styling is inline for simplicity
-
-### Modify scoring:
-- Edit the scoring logic in `app.py` (search for "getDifficultyMultiplier")
-
-## Troubleshooting
+### 4. Troubleshooting
 
 **Port already in use:**
 ```bash
@@ -153,4 +336,41 @@ sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-Your AWS learning game will be running at `http://localhost:5000` with full PostgreSQL persistence!
+### 5. Development Workflow
+
+**Adding Questions:**
+```bash
+# Connect to database
+docker-compose exec db psql -U postgres -d awsgame
+
+# Insert new question
+INSERT INTO questions (...) VALUES (...);
+
+# Exit database
+\q
+```
+
+**Viewing Logs:**
+```bash
+# All logs
+docker-compose logs
+
+# Specific service
+docker-compose logs web
+docker-compose logs db
+```
+
+**Database Management:**
+```bash
+# Reset database (removes all data)
+docker-compose down -v
+docker-compose up --build
+
+# Backup database
+docker-compose exec db pg_dump -U postgres awsgame > backup.sql
+
+# Restore database
+docker-compose exec -T db psql -U postgres awsgame < backup.sql
+```
+
+</details>
