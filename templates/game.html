@@ -1,0 +1,223 @@
+<!-- templates/game.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Knowledge Quest - Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #ff6b6b, #feca57); color: white; padding: 20px; text-align: center; }
+        .stats { display: flex; justify-content: space-around; margin-top: 15px; }
+        .stat { background: rgba(255,255,255,0.2); padding: 10px 15px; border-radius: 10px; }
+        .main-content { padding: 30px; }
+        .progress-bar { background: #e0e0e0; height: 8px; border-radius: 4px; margin: 20px 0; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #00d2ff, #3a7bd5); height: 100%; transition: width 0.5s ease; border-radius: 4px; }
+        .question-container { background: #f8f9fa; border-radius: 15px; padding: 25px; margin: 20px 0; }
+        .question { font-size: 1.3em; font-weight: bold; margin-bottom: 20px; color: #2c3e50; }
+        .answers { display: flex; flex-direction: column; gap: 15px; }
+        .answer { background: white; border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s ease; }
+        .answer:hover { border-color: #3498db; background: #f0f8ff; }
+        .answer.selected { border-color: #3498db; background: #3498db; color: white; }
+        .answer.correct { border-color: #2ecc71; background: #2ecc71; color: white; }
+        .answer.incorrect { border-color: #e74c3c; background: #e74c3c; color: white; }
+        .btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s ease; margin: 10px; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .feedback { margin: 20px 0; padding: 20px; border-radius: 10px; display: none; }
+        .feedback.correct { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .feedback.incorrect { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .references { background: #e8f4fd; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; border-radius: 5px; display: none; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 AWS Knowledge Quest</h1>
+            <h3>{{ topic.replace('-', ' ').title() }} - {{ difficulty.title() }}</h3>
+            <div class="stats">
+                <div class="stat"><div>Score</div><div id="score">0</div></div>
+                <div class="stat"><div>Question</div><div id="current-q">1</div>/<div id="total-q">0</div></div>
+                <div class="stat"><div>Correct</div><div id="correct">0</div></div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            
+            <div id="loading">Loading questions...</div>
+            
+            <div id="game-content" class="hidden">
+                <div class="question-container">
+                    <div class="question" id="question-text"></div>
+                    <div class="answers" id="answers-container"></div>
+                </div>
+                
+                <div class="feedback" id="feedback"></div>
+                <div class="references" id="references"></div>
+                
+                <div style="text-align: center;">
+                    <button class="btn" id="submit-btn" onclick="submitAnswer()" disabled>Submit Answer</button>
+                    <button class="btn" id="next-btn" onclick="nextQuestion()" style="display: none;">Next Question</button>
+                    <a href="/" class="btn">Back to Menu</a>
+                </div>
+            </div>
+
+            <div id="final-results" class="hidden">
+                <div class="question-container">
+                    <h2>🎉 Quiz Complete!</h2>
+                    <div id="final-score" style="font-size: 2em; margin: 20px 0; color: #2ecc71;"></div>
+                    <div id="final-message"></div>
+                    <div style="margin-top: 30px;">
+                        <a href="/" class="btn">Back to Menu</a>
+                        <a href="/results" class="btn">View Statistics</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const topic = '{{ topic }}';
+        const difficulty = '{{ difficulty }}';
+        let questions = [];
+        let currentIndex = 0;
+        let selectedAnswer = null;
+        let score = 0;
+        let correctAnswers = 0;
+
+        // Load questions
+        fetch(`/api/questions/${topic}/${difficulty}`)
+            .then(response => response.json())
+            .then(data => {
+                questions = data;
+                document.getElementById('total-q').textContent = questions.length;
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('game-content').classList.remove('hidden');
+                loadQuestion();
+            });
+
+        function loadQuestion() {
+            if (currentIndex >= questions.length) {
+                showFinalResults();
+                return;
+            }
+
+            const question = questions[currentIndex];
+            document.getElementById('question-text').textContent = question.question;
+            document.getElementById('current-q').textContent = currentIndex + 1;
+            
+            const answersContainer = document.getElementById('answers-container');
+            answersContainer.innerHTML = '';
+            
+            question.answers.forEach((answer, index) => {
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'answer';
+                answerDiv.textContent = answer;
+                answerDiv.onclick = () => selectAnswer(index);
+                answersContainer.appendChild(answerDiv);
+            });
+
+            // Update progress
+            const progress = ((currentIndex) / questions.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+
+            // Reset UI
+            selectedAnswer = null;
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('references').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('submit-btn').style.display = 'inline-block';
+        }
+
+        function selectAnswer(index) {
+            selectedAnswer = index;
+            document.querySelectorAll('.answer').forEach(answer => answer.classList.remove('selected'));
+            document.querySelectorAll('.answer')[index].classList.add('selected');
+            document.getElementById('submit-btn').disabled = false;
+        }
+
+        function submitAnswer() {
+            if (selectedAnswer === null) return;
+
+            const question = questions[currentIndex];
+            const isCorrect = selectedAnswer === question.correct;
+            
+            if (isCorrect) {
+                score += (difficulty === 'easy' ? 10 : difficulty === 'medium' ? 20 : 30);
+                correctAnswers++;
+            }
+
+            // Update display
+            document.getElementById('score').textContent = score;
+            document.getElementById('correct').textContent = correctAnswers;
+
+            // Show feedback
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback ' + (isCorrect ? 'correct' : 'incorrect');
+            feedback.innerHTML = `<strong>${isCorrect ? '✅ Correct!' : '❌ Incorrect'}</strong><br>${question.explanation}`;
+            feedback.style.display = 'block';
+
+            // Show references
+            if (question.references.length > 0) {
+                const references = document.getElementById('references');
+                references.innerHTML = `<h4>📚 Study Resources:</h4>${question.references.map(ref => `<div>${ref}</div>`).join('')}`;
+                references.style.display = 'block';
+            }
+
+            // Color answers
+            document.querySelectorAll('.answer').forEach((answer, index) => {
+                if (index === question.correct) {
+                    answer.classList.add('correct');
+                } else if (index === selectedAnswer) {
+                    answer.classList.add('incorrect');
+                }
+                answer.style.pointerEvents = 'none';
+            });
+
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'inline-block';
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            loadQuestion();
+        }
+
+        function showFinalResults() {
+            const percentage = Math.round((correctAnswers / questions.length) * 100);
+            
+            // Save score to database
+            fetch('/api/submit-score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    topic: topic,
+                    difficulty: difficulty,
+                    score: score,
+                    correct: correctAnswers,
+                    total: questions.length
+                })
+            });
+
+            document.getElementById('game-content').classList.add('hidden');
+            document.getElementById('final-results').classList.remove('hidden');
+            document.getElementById('final-score').textContent = `${correctAnswers}/${questions.length} (${percentage}%)`;
+            
+            let message = '';
+            if (percentage >= 90) message = '🏆 Outstanding! You\'ve mastered this topic!';
+            else if (percentage >= 80) message = '🌟 Excellent work! Just a few areas to review.';
+            else if (percentage >= 70) message = '👍 Good job! Some concepts need more study.';
+            else message = '📚 Keep studying! Review the reference materials.';
+            
+            document.getElementById('final-message').textContent = message;
+        }
+    </script>
+</body>
+</html>
