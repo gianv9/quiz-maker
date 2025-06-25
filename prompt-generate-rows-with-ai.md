@@ -17,6 +17,9 @@ Critical Requirements
     - If source has 5+ options, keep only the first 4 and adjust answer indices accordingly
     - All INSERT statements must have identical column counts
     - No tags column - remove any tag references
+- FORMAT
+- careful with comments between rows so the insert into doesn't break
+
 Your Task
 1. Parse the provided .md practice exam files
 2. Generate SQL INSERT statements matching the schema

@@ -27,16 +27,17 @@ A modern, containerized quiz platform for interactive learning experiences. Curr
 ### Work in Progress
 
 - ⏳ Database Schema Redesign - Quiz-centric model for multi-topic support and better analytics
+- ⏳ Analytics Dashboard - Metabase integration for advanced data analysis
 
 ### 🚀 Planned Features
 
+- 🔄 Automated Analytics Setup - Script-based Metabase initialization with pre-configured dashboards and queries
 - 🔄 Customizable Time Limit - Set a time limit for the quiz (default 30 minutes, max 120 minutes)
 - 🔄 Quiz Progress Tracking - Keep track of the progress when taking a quiz and resume if something happens
 - 🔄 Migration Strategies Support - Implement migration strategies for schema changes
 - 🔄 Multi-Topic Support - Quiz system supporting mixed technology domains
 - 🔄 Admin Panel - CRUD interface for managing quizzes, questions, and topics
 - 🔄 Question Generator - AI-powered question generation for new topics
-- 🔄 Analytics Dashboard - Metabase integration for advanced data analysis
 - 🔄 User Management - Registration, profiles, and progress tracking
 - 🔄 Export/Import - Question bank management and sharing
 - 🔄 Testing Suite - Comprehensive unit and integration tests
