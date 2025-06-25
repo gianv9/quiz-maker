@@ -29,6 +29,7 @@ A modern, containerized quiz platform for interactive learning experiences. Curr
 
 ### 🚀 Planned Features
 
+- 🔄 Quiz Progress Tracking - Keep track of the progress when taking a quiz and resume if something happens
 - 🔄 Migration Strategies Support - Implement migration strategies for schema changes
 - 🔄 Multi-Topic Support - Quiz system supporting mixed technology domains
 - 🔄 Admin Panel - CRUD interface for managing quizzes, questions, and topics
