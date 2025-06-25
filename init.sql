@@ -1,14 +1,19 @@
--- Create questions table
+-- Create questions table with multiple selection support
 CREATE TABLE questions (
     id SERIAL PRIMARY KEY,
     topic VARCHAR(50) NOT NULL,
     difficulty VARCHAR(10) NOT NULL,
+    question_type VARCHAR(20) DEFAULT 'single-choice' CHECK (question_type IN ('single-choice', 'multiple-choice')),
     question_text TEXT NOT NULL,
     option_a TEXT NOT NULL,
     option_b TEXT NOT NULL,
     option_c TEXT NOT NULL,
     option_d TEXT NOT NULL,
-    correct_answer INTEGER NOT NULL,
+    correct_answers JSONB NOT NULL CHECK (
+        jsonb_typeof(correct_answers) = 'array' AND 
+        jsonb_array_length(correct_answers) >= 1 AND
+        jsonb_array_length(correct_answers) <= 4
+    ),
     explanation TEXT,
     study_references TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -25,69 +30,47 @@ CREATE TABLE scores (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert sample questions
-INSERT INTO questions (topic, difficulty, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation, study_references) VALUES
-('shared-responsibility', 'easy', 'In the AWS Shared Responsibility Model, who is responsible for patching the EC2 operating system?', 'AWS', 'Customer', 'Both AWS and Customer', 'Third-party vendor', 1, 'The customer is responsible for patching the guest operating system on EC2 instances. AWS manages the underlying hypervisor and physical infrastructure.', 'AWS Shared Responsibility Model Documentation|AWS Well-Architected Security Pillar'),
+-- Performance indexes
+CREATE INDEX idx_questions_topic_difficulty ON questions(topic, difficulty);
+CREATE INDEX idx_questions_type ON questions(question_type);
+-- GIN index for efficient JSONB array operations (scoring algorithm needs this)
+CREATE INDEX idx_questions_correct_answers ON questions USING GIN (correct_answers);
 
-('shared-responsibility', 'easy', 'Who is responsible for encrypting data at rest in Amazon S3?', 'AWS automatically handles all encryption', 'Customer must configure encryption', 'Both can provide encryption', 'No encryption is needed', 2, 'Both AWS and customers can provide encryption. AWS offers SSE-S3, SSE-KMS, and SSE-C options, while customers can also encrypt before uploading.', 'Amazon S3 Encryption Documentation|AWS KMS User Guide'),
+-- Insert single-choice questions (existing format converted)
+INSERT INTO questions (topic, difficulty, question_type, question_text, option_a, option_b, option_c, option_d, correct_answers, explanation, study_references) VALUES
 
-('services-distinction', 'easy', 'Which of these AWS services is primarily a compute service?', 'Amazon S3', 'Amazon RDS', 'AWS Lambda', 'Amazon VPC', 2, 'AWS Lambda is a serverless compute service. S3 is storage, RDS is database, and VPC is networking.', 'AWS Compute Services Overview|AWS Lambda Documentation'),
+-- Shared Responsibility - Single Choice
+('shared-responsibility', 'easy', 'single-choice', 'In the AWS Shared Responsibility Model, who is responsible for patching the EC2 operating system?', 'AWS', 'Customer', 'Both AWS and Customer', 'Third-party vendor', '[1]', 'The customer is responsible for patching the guest operating system on EC2 instances. AWS manages the underlying hypervisor and physical infrastructure.', 'AWS Shared Responsibility Model Documentation|AWS Well-Architected Security Pillar'),
 
-('services-distinction', 'easy', 'Amazon S3 is categorized as which type of service?', 'Compute', 'Storage', 'Database', 'Networking', 1, 'Amazon S3 (Simple Storage Service) is an object storage service, not a compute service.', 'Amazon S3 User Guide|AWS Storage Services Comparison'),
+('shared-responsibility', 'easy', 'single-choice', 'Who is responsible for encrypting data at rest in Amazon S3?', 'AWS automatically handles all encryption', 'Customer must configure encryption', 'Both can provide encryption', 'No encryption is needed', '[2]', 'Both AWS and customers can provide encryption. AWS offers SSE-S3, SSE-KMS, and SSE-C options, while customers can also encrypt before uploading.', 'Amazon S3 Encryption Documentation|AWS KMS User Guide'),
 
-('storage-classes', 'easy', 'Which S3 storage class is best for frequently accessed data?', 'S3 Standard', 'S3 Intelligent-Tiering', 'S3 Glacier', 'S3 Standard-IA', 0, 'S3 Standard provides high durability, availability, and performance for frequently accessed data.', 'S3 Storage Classes Documentation|S3 Cost Optimization Guide'),
+-- Services Distinction - Single Choice
+('services-distinction', 'easy', 'single-choice', 'Which of these AWS services is primarily a compute service?', 'Amazon S3', 'Amazon RDS', 'AWS Lambda', 'Amazon VPC', '[2]', 'AWS Lambda is a serverless compute service. S3 is storage, RDS is database, and VPC is networking.', 'AWS Compute Services Overview|AWS Lambda Documentation'),
 
-('storage-classes', 'easy', 'What is the main benefit of S3 Intelligent-Tiering?', 'Lowest cost storage', 'Automatic cost optimization', 'Fastest retrieval', 'Highest durability', 1, 'S3 Intelligent-Tiering automatically moves objects between access tiers based on changing access patterns, optimizing costs without performance impact.', 'S3 Intelligent-Tiering Documentation|AWS Storage Cost Optimization'),
+('services-distinction', 'easy', 'single-choice', 'Amazon S3 is categorized as which type of service?', 'Compute', 'Storage', 'Database', 'Networking', '[1]', 'Amazon S3 (Simple Storage Service) is an object storage service, not a compute service.', 'Amazon S3 User Guide|AWS Storage Services Comparison'),
 
-('security-services', 'easy', 'What does AWS MFA provide?', 'Data encryption', 'Additional authentication layer', 'Network monitoring', 'Vulnerability scanning', 1, 'Multi-Factor Authentication (MFA) provides an additional security layer beyond username and password.', 'AWS MFA Documentation|IAM Best Practices'),
+-- Storage Classes - Single Choice  
+('storage-classes', 'easy', 'single-choice', 'Which S3 storage class is best for frequently accessed data?', 'S3 Standard', 'S3 Intelligent-Tiering', 'S3 Glacier', 'S3 Standard-IA', '[0]', 'S3 Standard provides high durability, availability, and performance for frequently accessed data.', 'S3 Storage Classes Documentation|S3 Cost Optimization Guide'),
 
-('security-services', 'easy', 'Which service is used for managing encryption keys in AWS?', 'AWS CloudWatch', 'AWS KMS', 'AWS Inspector', 'AWS WAF', 1, 'AWS Key Management Service (KMS) is used for creating and managing encryption keys.', 'AWS KMS User Guide|Encryption Best Practices'),
+('storage-classes', 'easy', 'single-choice', 'What is the main benefit of S3 Intelligent-Tiering?', 'Lowest cost storage', 'Automatic cost optimization', 'Fastest retrieval', 'Highest durability', '[1]', 'S3 Intelligent-Tiering automatically moves objects between access tiers based on changing access patterns, optimizing costs without performance impact.', 'S3 Intelligent-Tiering Documentation|AWS Storage Cost Optimization'),
 
-('well-architected', 'easy', 'Which Well-Architected pillar focuses on the ability to monitor systems and improve supporting processes?', 'Reliability', 'Operational Excellence', 'Performance Efficiency', 'Security', 1, 'Operational Excellence focuses on running and monitoring systems, and continuously improving supporting processes and procedures.', 'AWS Well-Architected Framework|Operational Excellence Pillar'),
+-- Security Services - Single Choice
+('security-services', 'easy', 'single-choice', 'What does AWS MFA provide?', 'Data encryption', 'Additional authentication layer', 'Network monitoring', 'Vulnerability scanning', '[1]', 'Multi-Factor Authentication (MFA) provides an additional security layer beyond username and password.', 'AWS MFA Documentation|IAM Best Practices'),
 
-('well-architected', 'easy', 'Which pillar emphasizes the ability to recover from failures?', 'Operational Excellence', 'Reliability', 'Cost Optimization', 'Sustainability', 1, 'The Reliability pillar focuses on the ability of a system to recover from infrastructure or service disruptions.', 'AWS Well-Architected Reliability Pillar|Disaster Recovery Strategies');
+('security-services', 'easy', 'single-choice', 'Which service is used for managing encryption keys in AWS?', 'AWS CloudWatch', 'AWS KMS', 'AWS Inspector', 'AWS WAF', '[1]', 'AWS Key Management Service (KMS) is used for creating and managing encryption keys.', 'AWS KMS User Guide|Encryption Best Practices'),
 
--- Add Medium Difficulty Questions
-INSERT INTO questions (topic, difficulty, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation, study_references) VALUES
+-- Well-Architected - Single Choice
+('well-architected', 'easy', 'single-choice', 'Which Well-Architected pillar focuses on the ability to monitor systems and improve supporting processes?', 'Reliability', 'Operational Excellence', 'Performance Efficiency', 'Security', '[1]', 'Operational Excellence focuses on running and monitoring systems, and continuously improving supporting processes and procedures.', 'AWS Well-Architected Framework|Operational Excellence Pillar'),
 
--- Shared Responsibility - Medium
-('shared-responsibility', 'medium', 'Your company uses RDS with Multi-AZ deployment. In this setup, who is responsible for database failover?', 'Customer must manually trigger failover', 'AWS automatically handles failover', 'Database vendor handles failover', 'Failover is not supported', 1, 'AWS automatically handles failover in Multi-AZ deployments. The customer is responsible for application-level handling of connection retries.', 'Amazon RDS Multi-AZ Documentation|RDS Best Practices Guide'),
+('well-architected', 'easy', 'single-choice', 'Which pillar emphasizes the ability to recover from failures?', 'Operational Excellence', 'Reliability', 'Cost Optimization', 'Sustainability', '[1]', 'The Reliability pillar focuses on the ability of a system to recover from infrastructure or service disruptions.', 'AWS Well-Architected Reliability Pillar|Disaster Recovery Strategies'),
 
-('shared-responsibility', 'medium', 'You are running a web application on EC2 behind an ELB. Who is responsible for SSL certificate management?', 'AWS manages all certificates', 'Customer must manage certificates', 'Both AWS and Customer share responsibility', 'Third-party certificate authority', 1, 'Customers are responsible for obtaining, installing, and renewing SSL certificates. AWS provides tools like ACM to help manage certificates.', 'AWS Certificate Manager Documentation|ELB SSL Configuration'),
+-- Multiple Choice Questions
+('shared-responsibility', 'easy', 'multiple-choice', 'Which of the following are customer responsibilities in the AWS Shared Responsibility Model? (Select all that apply)', 'Patching guest OS on EC2', 'Managing IAM users and policies', 'Physical security of data centers', 'Configuring security groups', '[0,1,3]', 'Customers are responsible for patching guest OS, managing IAM, and configuring security groups. AWS handles physical security of data centers.', 'AWS Shared Responsibility Model Documentation'),
 
--- Services Distinction - Medium  
-('services-distinction', 'medium', 'Your application needs to process large amounts of data but only runs occasionally. Which compute service would be most cost-effective?', 'EC2 On-Demand instances', 'EC2 Reserved instances', 'AWS Lambda', 'Amazon ECS with EC2', 2, 'AWS Lambda is ideal for occasional workloads as you only pay for execution time, not idle time. Perfect for event-driven processing.', 'AWS Lambda Pricing|Compute Services Cost Optimization'),
+('services-distinction', 'easy', 'multiple-choice', 'Which of these are AWS compute services? (Select all that apply)', 'Amazon EC2', 'Amazon S3', 'AWS Lambda', 'Amazon ECS', '[0,2,3]', 'EC2, Lambda, and ECS are compute services. S3 is a storage service.', 'AWS Compute Services Overview'),
 
-('services-distinction', 'medium', 'You need a managed database service for a high-traffic web application with complex queries. Which service is most appropriate?', 'Amazon S3', 'Amazon RDS', 'AWS Lambda', 'Amazon ECS', 1, 'Amazon RDS provides managed relational databases optimized for complex queries and high-traffic applications with features like read replicas and Multi-AZ.', 'Amazon RDS Documentation|Database Selection Guide'),
+('security-services', 'medium', 'multiple-choice', 'Which AWS services can help protect against DDoS attacks? (Select all that apply)', 'AWS Shield', 'AWS WAF', 'Amazon CloudFront', 'Amazon RDS', '[0,1,2]', 'AWS Shield provides DDoS protection, WAF filters malicious traffic, and CloudFront can absorb attacks. RDS is a database service.', 'AWS DDoS Protection Best Practices'),
 
--- Storage Classes - Medium
-('storage-classes', 'medium', 'Your application has unpredictable access patterns - sometimes files are accessed daily, sometimes not for months. Which storage class is optimal?', 'S3 Standard (safest choice)', 'S3 Standard-IA (assume infrequent)', 'S3 Intelligent-Tiering (adapts to patterns)', 'S3 Glacier (cheapest option)', 2, 'S3 Intelligent-Tiering is perfect for unpredictable access patterns as it automatically optimizes costs by moving objects between tiers.', 'S3 Intelligent-Tiering Use Cases|S3 Storage Class Analysis'),
+('storage-classes', 'medium', 'multiple-choice', 'Which S3 storage classes are suitable for long-term archival? (Select all that apply)', 'S3 Standard', 'S3 Glacier Instant Retrieval', 'S3 Glacier Flexible Retrieval', 'S3 Glacier Deep Archive', '[1,2,3]', 'All Glacier tiers are designed for archival. S3 Standard is for frequently accessed data.', 'S3 Storage Classes for Archival'),
 
-('storage-classes', 'medium', 'You have 10TB of log data that needs to be kept for compliance but is rarely accessed. What is the most cost-effective approach?', 'Keep everything in S3 Standard', 'Use S3 Standard-IA immediately', 'Use S3 Glacier for immediate archival', 'Use S3 Intelligent-Tiering with archive tiers', 3, 'S3 Intelligent-Tiering with optional archive tiers provides the most cost-effective solution for infrequently accessed compliance data.', 'S3 Glacier Documentation|Compliance Data Storage Best Practices'),
-
--- Security Services - Medium
-('security-services', 'medium', 'Your web application is experiencing SQL injection attacks. Which AWS service should you implement?', 'AWS CloudWatch (for monitoring)', 'AWS Inspector (for vulnerabilities)', 'AWS WAF (for web protection)', 'AWS KMS (for encryption)', 2, 'AWS WAF (Web Application Firewall) protects against common web exploits like SQL injection and cross-site scripting.', 'AWS WAF Documentation|Web Application Security Guide'),
-
-('security-services', 'medium', 'You need to detect vulnerabilities in your EC2 instances and container images. Which service should you use?', 'AWS CloudWatch', 'AWS Inspector', 'AWS WAF', 'AWS Config', 1, 'AWS Inspector automatically assesses EC2 instances and container images for software vulnerabilities and unintended network exposure.', 'AWS Inspector Documentation|Vulnerability Management Best Practices'),
-
--- Well-Architected - Medium
-('well-architected', 'medium', 'Your system needs to handle a Black Friday traffic spike. Which Well-Architected principle should you prioritize?', 'Cost optimization (minimize spend)', 'Reliability (ensure availability)', 'Security (protect from attacks)', 'Operational Excellence (monitor everything)', 1, 'During traffic spikes, Reliability is crucial - your system must remain available and recover gracefully from any failures during peak demand.', 'Reliability Pillar Design Principles|Auto Scaling Best Practices'),
-
-('well-architected', 'medium', 'You are designing a system that must be available 99.99% of the time. Which design patterns support this requirement?', 'Single region, single AZ deployment', 'Multi-AZ deployment with auto-scaling', 'Manual scaling and monitoring', 'Cost optimization over availability', 1, 'Multi-AZ deployment with auto-scaling provides high availability by distributing resources across multiple failure domains with automatic recovery.', 'High Availability Architecture Patterns|Multi-AZ Best Practices'),
-
--- Add Hard Difficulty Questions
-
--- Shared Responsibility - Hard
-('shared-responsibility', 'hard', 'In a scenario where you are running containers on ECS with EC2 launch type, who is responsible for securing the container runtime?', 'AWS secures everything', 'Customer secures container images and runtime', 'Split between AWS (host) and Customer (containers)', 'Third-party container security tool', 2, 'AWS secures the underlying EC2 host and ECS service, while customers are responsible for securing container images, runtime configuration, and application-level security.', 'ECS Security Best Practices|AWS Container Security Documentation'),
-
--- Services Distinction - Hard  
-('services-distinction', 'hard', 'You need to choose between Amazon ECS, EKS, and Lambda for a microservices architecture. What is the key deciding factor?', 'Cost is the only factor', 'Container orchestration needs vs serverless simplicity', 'Geographic availability', 'Programming language support', 1, 'Choose ECS/EKS for complex container orchestration needs and long-running services, Lambda for event-driven, stateless functions with automatic scaling.', 'AWS Container Services Comparison|Microservices on AWS'),
-
--- Storage Classes - Hard
-('storage-classes', 'hard', 'You are designing a data lake with hot, warm, and cold data tiers. How would you implement this cost-effectively with S3?', 'Use only S3 Standard for simplicity', 'Manual lifecycle policies for each tier', 'S3 Intelligent-Tiering with optional archive tiers', 'Separate buckets for each temperature', 2, 'S3 Intelligent-Tiering with Archive and Deep Archive access tiers provides automatic optimization across all temperature levels without manual management.', 'S3 Data Lake Architecture|Advanced S3 Lifecycle Management'),
-
--- Security Services - Hard
-('security-services', 'hard', 'You need to implement defense-in-depth for a critical application. Which combination provides the most comprehensive security?', 'Just WAF at the edge', 'WAF + CloudWatch + KMS encryption', 'IAM + MFA + WAF + KMS + Inspector + CloudTrail', 'Only network security groups', 2, 'Defense-in-depth requires multiple security layers: identity (IAM/MFA), network (WAF), encryption (KMS), monitoring (CloudWatch/CloudTrail), and vulnerability management (Inspector).', 'AWS Security Best Practices|Defense-in-Depth Architecture'),
-
--- Well-Architected - Hard
-('well-architected', 'hard', 'You are designing a global application architecture. How do the Well-Architected pillars interact in your design decisions?', 'Focus on one pillar at a time', 'Pillars are independent and do not interact', 'Balance trade-offs between all pillars', 'Security pillar always overrides others', 2, 'Well-Architected design requires balancing trade-offs between all pillars. For example, global distribution improves reliability and performance but may increase costs and operational complexity.', 'AWS Well-Architected Tool|Multi-Region Architecture Patterns');
+('well-architected', 'hard', 'multiple-choice', 'Which design patterns support the Reliability pillar? (Select all that apply)', 'Multi-AZ deployments', 'Auto Scaling Groups', 'Circuit breaker pattern', 'Single point of failure architecture', '[0,1,2]', 'Multi-AZ, Auto Scaling, and circuit breakers improve reliability. Single points of failure reduce reliability.', 'AWS Well-Architected Reliability Pillar');

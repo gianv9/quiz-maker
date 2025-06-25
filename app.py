@@ -6,6 +6,7 @@ from datetime import datetime
 import random
 import time
 import sys
+import json
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
@@ -75,8 +76,9 @@ def get_questions(topic, difficulty):
             formatted_questions.append({
                 'id': q['id'],
                 'question': q['question_text'],
+                'question_type': q['question_type'],
                 'answers': [q['option_a'], q['option_b'], q['option_c'], q['option_d']],
-                'correct': q['correct_answer'],
+                'correct_answers': q['correct_answers'],  # JSONB handled natively
                 'explanation': q['explanation'],
                 'references': q['study_references'].split('|') if q['study_references'] else []
             })
@@ -85,11 +87,63 @@ def get_questions(topic, difficulty):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def calculate_score(question_type, correct_answers, user_answers, difficulty):
+    """Calculate score with penalty for wrong selections"""
+    base_points = {'easy': 10, 'medium': 20, 'hard': 30}[difficulty]
+    
+    if question_type == 'single-choice':
+        return base_points if user_answers and user_answers[0] in correct_answers else 0
+    
+    elif question_type == 'multiple-choice':
+        if not user_answers:
+            return 0
+        
+        correct_set = set(correct_answers)
+        user_set = set(user_answers)
+        
+        # Calculate correct and wrong selections
+        correct_selections = len(correct_set.intersection(user_set))
+        wrong_selections = len(user_set - correct_set)
+        total_correct = len(correct_set)
+        
+        # Score = (correct - wrong) / total_correct * max_points, minimum 0
+        if total_correct > 0:
+            score_ratio = max(0, (correct_selections - wrong_selections) / total_correct)
+            return int(base_points * score_ratio)
+        
+        return 0
+    
+    return 0
+
 @app.route('/api/submit-score', methods=['POST'])
 def submit_score():
-    """Save user score"""
+    """Save user score with support for partial scoring"""
     try:
         data = request.json
+        
+        # Calculate detailed scoring if provided
+        if 'detailed_results' in data:
+            total_score = 0
+            correct_count = 0
+            
+            for result in data['detailed_results']:
+                question_score = calculate_score(
+                    result['question_type'],
+                    result['correct_answers'], 
+                    result['user_answers'],
+                    data['difficulty']
+                )
+                total_score += question_score
+                
+                # Count as correct if full points achieved
+                base_points = {'easy': 10, 'medium': 20, 'hard': 30}[data['difficulty']]
+                if question_score == base_points:
+                    correct_count += 1
+            
+            # Override with calculated values
+            data['score'] = total_score
+            data['correct'] = correct_count
+        
         with get_db() as conn:
             with conn.cursor() as cur:
                 cur.execute(
