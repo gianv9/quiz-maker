@@ -128,7 +128,9 @@ quiz-maker/
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile            # Container definition
 ├── docker-compose.yml    # Multi-container setup
-├── init.sql             # Database initialization
+├── data                  # Application Schema And Initial Data
+│   ├── init.sql                    # Database initialization
+│   └── *.sql    # Additional questions
 ├── templates/           # HTML templates
 │   ├── index.html       # Main menu
 │   ├── game.html        # Quiz interface
@@ -250,6 +252,21 @@ Contributions are welcome! This is a public repository used for:
 5. Commit your changes following commit conventions
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
+
+## 📁 Data Management
+Large Question Sets:
+
+Store in data/seed_questions.sql for 100+ questions
+Use numbered Docker entrypoint files: 01-init.sql, 02-seed.sql
+Sample/development data belongs in repository
+Production datasets >10MB should use external storage (S3, releases)
+
+Repository Guidelines:
+
+✅ Core questions defining app functionality
+✅ Test/sample data for development setup
+❌ User-generated content or sensitive question banks
+❌ Large production datasets
 
 ### Commit Convention
 
