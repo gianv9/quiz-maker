@@ -97,8 +97,11 @@
         let correctAnswers = 0;
         let detailedResults = [];
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const questionCount = urlParams.get('count') || '10';
+
         // Load questions
-        fetch(`/api/questions/${topic}/${difficulty}`)
+        fetch(`/api/questions/${topic}/${difficulty}?count=${questionCount}`)
             .then(response => response.json())
             .then(data => {
                 questions = data;

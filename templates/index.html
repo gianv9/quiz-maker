@@ -42,6 +42,19 @@
             <a href="#" class="difficulty-btn medium" onclick="setDifficulty('medium')">Medium</a>
             <a href="#" class="difficulty-btn hard" onclick="setDifficulty('hard')">Hard</a>
         </div>
+
+        <div class="question-count-selector" style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 10px; font-weight: bold;">Number of Questions:</label>
+            <select id="questionCount" style="padding: 8px; border-radius: 5px; border: 2px solid #ddd;">
+                <option value="5">5 Questions</option>
+                <option value="10" selected>10 Questions</option>
+                <option value="15">15 Questions</option>
+                <option value="20">20 Questions</option>
+                <option value="30">30 Questions</option>
+                <option value="40">40 Questions</option>
+                <option value="all">All Available (50 Max)</option>
+            </select>
+        </div>
         
         <div style="margin-top: 30px;">
             <a href="/results" class="difficulty-btn medium">View Statistics</a>
@@ -51,18 +64,21 @@
     <script>
         let selectedTopic = '';
         let selectedDifficulty = 'medium';
-        
+        let questionCount = '10';
+
         function selectTopic(topic) {
             selectedTopic = topic;
+            questionCount = document.getElementById('questionCount').value;
             if (selectedDifficulty) {
-                window.location.href = `/game/${topic}/${selectedDifficulty}`;
+                window.location.href = `/game/${topic}/${selectedDifficulty}?count=${questionCount}`;
             }
         }
-        
+
         function setDifficulty(difficulty) {
             selectedDifficulty = difficulty;
+            questionCount = document.getElementById('questionCount').value;
             if (selectedTopic) {
-                window.location.href = `/game/${selectedTopic}/${difficulty}`;
+                window.location.href = `/game/${selectedTopic}/${difficulty}?count=${questionCount}`;
             }
         }
     </script>

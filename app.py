@@ -56,17 +56,25 @@ def game(topic, difficulty):
 def get_questions(topic, difficulty):
     """API endpoint to get questions for topic and difficulty"""
     try:
+        count = request.args.get('count', '10')
+        
+        # Set maximum limit to prevent database overload
+        if count == 'all':
+            limit = 50  # Maximum questions per quiz
+        else:
+            limit = min(int(count), 50)  # Cap user selection at 50
+        
         with get_db() as conn:
             with conn.cursor() as cur:
                 if topic == 'mixed':
                     cur.execute(
-                        "SELECT * FROM questions WHERE difficulty = %s ORDER BY RANDOM() LIMIT 10",
-                        (difficulty,)
+                        "SELECT * FROM questions WHERE difficulty = %s ORDER BY RANDOM() LIMIT %s",
+                        (difficulty, limit)
                     )
                 else:
                     cur.execute(
-                        "SELECT * FROM questions WHERE topic = %s AND difficulty = %s ORDER BY RANDOM()",
-                        (topic, difficulty)
+                        "SELECT * FROM questions WHERE topic = %s AND difficulty = %s ORDER BY RANDOM() LIMIT %s",
+                        (topic, difficulty, limit)
                     )
                 questions = cur.fetchall()
         

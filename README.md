@@ -22,6 +22,7 @@ A modern, containerized quiz platform for interactive learning experiences. Curr
 - ✅ Persistent Storage - PostgreSQL database for scores and questions
 - ✅ Mixed Review Mode - Random questions across all topics
 - ✅ Links to Resources - External study resources displayed after questions
+- ✅ Customizable Question Count - Choose 5, 10, 15, 20, or all available questions per quiz
 
 ### Work in Progress
 
@@ -29,6 +30,7 @@ A modern, containerized quiz platform for interactive learning experiences. Curr
 
 ### 🚀 Planned Features
 
+- 🔄 Customizable Time Limit - Set a time limit for the quiz (default 30 minutes, max 120 minutes)
 - 🔄 Quiz Progress Tracking - Keep track of the progress when taking a quiz and resume if something happens
 - 🔄 Migration Strategies Support - Implement migration strategies for schema changes
 - 🔄 Multi-Topic Support - Quiz system supporting mixed technology domains
@@ -150,7 +152,7 @@ quiz-maker/
 
 ```sql
 INSERT INTO questions (topic, difficulty, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation, study_references) VALUES
-('new-topic', 'easy', 'Your question here?', 'Option A', 'Option B', 'Option C', 'Option D', 0, 'Explanation here', 'Reference 1|Reference 2');
+('new-topic', 'easy', 'Your question here?',LIMIT 10 'Option A', 'Option B', 'Option C', 'Option D', 0, 'Explanation here', 'Reference 1|Reference 2');
 ```
 
 ### Development Commands
@@ -161,7 +163,7 @@ docker-compose logs
 
 # Access database
 docker-compose exec db psql -U postgres -d awsgame
-
+LIMIT 10
 # Execute a single SQL Outside of the container (example, to insert more questions)
 cat 02-aws_clf_c02_practice_exam_03.sql | docker-compose exec -T db psql -U postgres -d awsgame
 
