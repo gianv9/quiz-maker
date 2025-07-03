@@ -28,7 +28,8 @@ INSERT INTO questions (topic, difficulty, question_type, question_text, option_a
 ('services-distinction', 'easy', 'single-choice', 'A company is developing an application that will leverage facial recognition to automate photo tagging. Which AWS Service should the company use for facial recognition?', 'Amazon Comprehend.', 'AWS IAM.', 'Amazon Polly.', 'Amazon Rekognition.', '[3]', 'Amazon Rekognition provides image and video analysis including facial recognition.', 'Amazon Rekognition Documentation'),
 
 -- Question 9
-('services-distinction', 'medium', 'single-choice', 'Which of the following are examples of AWS-managed databases? (Choose TWO)', 'Amazon Neptune.', 'Amazon CloudSearch.', 'Microsoft SQL Server on Amazon EC2.', 'MySQL on Amazon EC2.', '[0]', 'Amazon Neptune is an AWS-managed graph database service.', 'AWS Database Services Documentation'),
+-- Fix: The questions said (Choose TWO), but Cloud Search is not a database
+('services-distinction', 'medium', 'single-choice', 'Which of the following are examples of AWS-managed databases?', 'Amazon Neptune.', 'Amazon CloudSearch.', 'Microsoft SQL Server on Amazon EC2.', 'MySQL on Amazon EC2.', '[0]', 'Amazon Neptune is an AWS-managed graph database service.', 'AWS Database Services Documentation'),
 
 -- Question 10
 ('services-distinction', 'medium', 'single-choice', 'A company''s AWS workflow requires that it periodically perform large-scale image and video processing jobs. The customer is seeking to minimize cost and has stated that the amount of time it takes to process these jobs is not critical, but that cost minimization is the most important factor in designing the solution. Which EC2 instance class is best suited for this processing?', 'EC2 On-Demand Instances.', 'EC2 Reserved Instances - No Upfront.', 'EC2 Spot Instances.', 'EC2 Reserved Instances - All Upfront.', '[2]', 'EC2 Spot Instances offer the lowest cost for fault-tolerant workloads.', 'Amazon EC2 Pricing Documentation'),

@@ -165,6 +165,7 @@ docker-compose logs
 # Access database
 docker-compose exec db psql -U postgres -d awsgame
 LIMIT 10
+
 # Execute a single SQL Outside of the container (example, to insert more questions)
 cat 02-aws_clf_c02_practice_exam_03.sql | docker-compose exec -T db psql -U postgres -d awsgame
 
