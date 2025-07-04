@@ -1,4 +1,4 @@
-version: '3.3'
+# version: '3.3' -> removed to address this warning: "WARN[0000] /home/gverr/Documents/3-resources/code/github.com/gianv9/quiz-maker/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion "
 
 services:
   db:
@@ -43,7 +43,7 @@ services:
     volumes:
       - metabase_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U metabase_user"]
+      test: ["CMD-SHELL", "pg_isready -U metabase_user -d metabase"]
       interval: 5s
       timeout: 5s
       retries: 5
