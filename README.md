@@ -197,6 +197,142 @@ DB_PASSWORD=password
 SECRET_KEY=your-secret-key-here
 ```
 
+## 📱 Mobile Development (Ionic Frontend)
+
+### Prerequisites for Android Development
+
+**Install Android Command-Line Tools:**
+```bash
+# Download official Android SDK command-line tools
+cd /tmp
+wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+unzip commandlinetools-linux-11076708_latest.zip
+
+# Install in proper SDK directory structure
+sudo mkdir -p /usr/lib/android-sdk/cmdline-tools/latest
+sudo mv cmdline-tools/* /usr/lib/android-sdk/cmdline-tools/latest/
+
+# Set environment variables (add to ~/.bashrc for persistence)
+export ANDROID_HOME=/usr/lib/android-sdk
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+```
+
+**Accept licenses and install required packages:**
+```bash
+# Accept all Android SDK licenses
+/usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+
+# Install required Android packages
+/usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager \
+  "platforms;android-35" \
+  "build-tools;34.0.0" \
+  "platform-tools"
+
+# Set SDK location for Ionic project
+echo "sdk.dir=/usr/lib/android-sdk" > ionic-frontend/quiz-app/android/local.properties
+```
+
+### Android APK Generation
+
+**Build Android APK:**
+```bash
+# Navigate to Ionic project
+cd ionic-frontend/quiz-app
+
+# Add Android platform (first time only)
+ionic capacitor add android
+
+# Build for Android
+ionic capacitor build android
+
+# Generate debug APK
+cd android
+./gradlew assembleDebug
+```
+
+**APK Output Location:**
+```
+ionic-frontend/quiz-app/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Install APK on Device
+
+**USB Installation:**
+```bash
+# Enable Developer Options & USB Debugging on device
+# Connect device via USB
+
+# Install APK
+adb install app/build/outputs/apk/debug/app-debug.apk
+
+# Or copy APK to device and install manually
+```
+
+**File Transfer:**
+```bash
+# Copy APK to device
+adb push app/build/outputs/apk/debug/app-debug.apk /sdcard/Download/
+
+# Then install from device file manager
+```
+
+### Development Workflow
+
+**Ionic Development:**
+```bash
+# Start development server
+ionic serve
+
+# Test in browser at http://localhost:8100
+```
+
+**Mobile Testing:**
+```bash
+# Sync changes to mobile project
+ionic capacitor sync android
+
+# Rebuild and install
+ionic capacitor build android
+cd android && ./gradlew assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Troubleshooting
+
+**Common Issues:**
+
+1. **License not accepted:**
+   ```bash
+   /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+   ```
+
+2. **SDK location not found:**
+   ```bash
+   echo "sdk.dir=/usr/lib/android-sdk" > android/local.properties
+   ```
+
+3. **Build tools version mismatch:**
+   ```bash
+   # Install specific version
+   /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0"
+   ```
+
+4. **Gradle build fails:**
+   ```bash
+   # Clean and rebuild
+   cd android
+   ./gradlew clean
+   ./gradlew assembleDebug
+   ```
+
+**Environment Variables:**
+```bash
+# Add to ~/.bashrc for permanent setup
+export ANDROID_HOME=/usr/lib/android-sdk
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+```
+
 ## 🧪 Testing & CI/CD
 
 ### Testing Strategy (Planned)

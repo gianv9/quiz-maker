@@ -1,5 +1,16 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Custom additions to the default Ionic gitignore
+# Capacitor
+android/
+ios/
+.capacitor/
+
+# Mobile builds
+*.apk
+*.aab
+
+# Default gitignore packed with Ionic projects:
 # dependencies
 /node_modules
 /.pnp
