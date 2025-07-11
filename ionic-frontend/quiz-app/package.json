@@ -10,7 +10,8 @@
     "test.e2e": "cypress run",
     "test.unit": "vitest",
     "lint": "eslint",
-    "android:dev": "npm run build && npx cap sync android && npx cap run android",
+    "build:dev": "tsc && vite build --mode development",
+    "android:dev": "npm run build:dev && npx cap sync android && npx cap run android",
     "android:prod": "npm run build && npx cap sync android && npx cap build android --release"
   },
   "dependencies": {
