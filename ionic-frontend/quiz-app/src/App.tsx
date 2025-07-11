@@ -10,7 +10,7 @@ import {
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { home, gameController, stats } from 'ionicons/icons';
+import { home, gameController, analyticsOutline } from 'ionicons/icons';
 import Home from './pages/Home';
 import Game from './pages/Game';
 import Results from './pages/Results';
@@ -67,7 +67,7 @@ const App: React.FC = () => (
             <IonLabel>Quiz</IonLabel>
           </IonTabButton>
           <IonTabButton tab="results" href="/results">
-            <IonIcon aria-hidden="true" icon={stats} />
+            <IonIcon aria-hidden="true" icon={analyticsOutline} />
             <IonLabel>Results</IonLabel>
           </IonTabButton>
         </IonTabBar>
