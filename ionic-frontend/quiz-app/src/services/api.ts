@@ -1,4 +1,4 @@
-// src/services/api.ts
+// src/services/api.ts - Fixed Version with No Hardcoded URLs
 
 export interface Question {
   id: number;
@@ -34,45 +34,215 @@ export interface Stats {
   attempts: number;
 }
 
+interface ApiConfig {
+  baseUrl: string;
+  environment: string;
+  platform: string;
+  debugMode: boolean;
+}
+
 class ApiService {
-  private baseUrl: string;
+  private config: ApiConfig;
 
   constructor() {
-    // For development, the Flask backend runs on localhost:5000
-    // For production, you might want to use environment variables
-    this.baseUrl = 'http://localhost:5000';
+    this.config = this.determineApiConfig();
+    
+    if (this.config.debugMode) {
+      console.log('🔧 API Service Configuration:', this.config);
+    }
+  }
+
+  private determineApiConfig(): ApiConfig {
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    const isDevelopment = import.meta.env.DEV;
+    const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true' || import.meta.env.VITE_DEBUG_NETWORK === 'true';
+    
+    let baseUrl: string;
+    let environment: string;
+
+    // Priority order for API URL determination:
+    // 1. Manual override (for testing specific backends)
+    // 2. Platform-specific configuration
+    // 3. Environment-based defaults
+
+    if (import.meta.env.VITE_API_BASE_URL_OVERRIDE) {
+      baseUrl = import.meta.env.VITE_API_BASE_URL_OVERRIDE;
+      environment = 'override';
+    } else if (isNative) {
+      // Mobile app
+      if (isDevelopment) {
+        // Mobile development: use local network IP from env
+        baseUrl = import.meta.env.VITE_API_BASE_URL_LOCAL;
+        environment = 'mobile-dev';
+        
+        if (!baseUrl) {
+          throw new Error(
+            '❌ VITE_API_BASE_URL_LOCAL not set! ' +
+            'Please set your computer\'s IP in .env.local: ' +
+            'VITE_API_BASE_URL_LOCAL=http://192.168.1.XXX:5000'
+          );
+        }
+      } else {
+        // Mobile production: use production API
+        baseUrl = import.meta.env.VITE_API_BASE_URL;
+        environment = 'mobile-prod';
+        
+        if (!baseUrl) {
+          throw new Error(
+            '❌ VITE_API_BASE_URL not set! ' +
+            'Please set production URL in .env.production'
+          );
+        }
+      }
+    } else {
+      // Web browser
+      if (isDevelopment) {
+        // Web development: use localhost or local override
+        baseUrl = import.meta.env.VITE_API_BASE_URL_LOCAL || 'http://localhost:5000';
+        environment = 'web-dev';
+      } else {
+        // Web production: use production API
+        baseUrl = import.meta.env.VITE_API_BASE_URL;
+        environment = 'web-prod';
+        
+        if (!baseUrl) {
+          throw new Error(
+            '❌ VITE_API_BASE_URL not set! ' +
+            'Please set production URL in .env.production'
+          );
+        }
+      }
+    }
+
+    // Validate URL format
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      throw new Error(`❌ Invalid API URL format: ${baseUrl}. Must start with http:// or https://`);
+    }
+
+    return {
+      baseUrl,
+      environment,
+      platform: isNative ? 'native' : 'web',
+      debugMode
+    };
+  }
+
+  // Network connectivity and health check
+  private async healthCheck(): Promise<{ connected: boolean; latency?: number; error?: string }> {
+    const startTime = Date.now();
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for mobile
+      
+      const response = await fetch(`${this.config.baseUrl}/api/topics`, {
+        method: 'HEAD',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      const latency = Date.now() - startTime;
+      
+      if (response.ok) {
+        return { connected: true, latency };
+      } else {
+        return { connected: false, error: `HTTP ${response.status}` };
+      }
+    } catch (error: any) {
+      const latency = Date.now() - startTime;
+      
+      if (error.name === 'AbortError') {
+        return { connected: false, error: 'Timeout (10s)' };
+      }
+      
+      return { 
+        connected: false, 
+        error: error.message || 'Network error',
+        latency 
+      };
+    }
   }
 
   async getTopics(): Promise<string[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/topics`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch topics');
+      if (this.config.debugMode) {
+        console.log('📡 Health check:', await this.healthCheck());
+        console.log('📡 Fetching topics from:', `${this.config.baseUrl}/api/topics`);
       }
-      return await response.json();
+      
+      const response = await fetch(`${this.config.baseUrl}/api/topics`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const topics = await response.json();
+      
+      if (this.config.debugMode) {
+        console.log('✅ Topics received:', topics);
+      }
+      
+      return topics;
     } catch (error) {
-      console.error('Error fetching topics:', error);
-      // Return some default topics if the API fails
-      return ['aws-shared-responsibility', 'aws-services', 'aws-storage', 'aws-security', 'aws-well-architected'];
+      console.error('❌ Error fetching topics:', error);
+      console.log('🔄 Using fallback topics');
+      
+      // Enhanced error handling with specific messages
+      this.logNetworkError(error);
+      
+      // Fallback topics
+      return [
+        'aws-shared-responsibility',
+        'aws-services', 
+        'aws-storage',
+        'aws-security',
+        'aws-well-architected'
+      ];
     }
   }
 
   async getQuestions(topic: string, difficulty: string, count: string = '10'): Promise<Question[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/questions/${topic}/${difficulty}?count=${count}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch questions: ${response.statusText}`);
+      const url = `${this.config.baseUrl}/api/questions/${topic}/${difficulty}?count=${count}`;
+      
+      if (this.config.debugMode) {
+        console.log('📡 Fetching questions from:', url);
+        console.log('📡 Parameters:', { topic, difficulty, count });
       }
-      return await response.json();
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+      }
+      
+      const questions = await response.json();
+      
+      if (this.config.debugMode) {
+        console.log('✅ Questions received:', questions.length);
+        console.log('📝 First question preview:', questions[0]?.question?.substring(0, 100) + '...');
+      }
+      
+      if (!Array.isArray(questions) || questions.length === 0) {
+        throw new Error('No questions returned from API');
+      }
+      
+      return questions;
     } catch (error) {
-      console.error('Error fetching questions:', error);
-      throw error;
+      console.error('❌ Error fetching questions:', error);
+      this.logNetworkError(error);
+      throw error; // Re-throw to let the component handle it
     }
   }
 
   async submitScore(scoreData: ScoreData): Promise<{ status: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/submit-score`, {
+      if (this.config.debugMode) {
+        console.log('📡 Submitting score:', scoreData);
+      }
+      
+      const response = await fetch(`${this.config.baseUrl}/api/submit-score`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,28 +251,65 @@ class ApiService {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to submit score: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      
+      if (this.config.debugMode) {
+        console.log('✅ Score submitted successfully');
+      }
+      
+      return result;
     } catch (error) {
-      console.error('Error submitting score:', error);
+      console.error('❌ Error submitting score:', error);
+      this.logNetworkError(error);
       throw error;
     }
   }
 
   async getStats(): Promise<Stats[]> {
     try {
-      // Note: We'll need to add this endpoint to the Flask backend
-      const response = await fetch(`${this.baseUrl}/api/stats`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch stats');
+      if (this.config.debugMode) {
+        console.log('📡 Fetching stats from:', `${this.config.baseUrl}/api/stats`);
       }
-      return await response.json();
+      
+      const response = await fetch(`${this.config.baseUrl}/api/stats`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const stats = await response.json();
+      
+      if (this.config.debugMode) {
+        console.log('✅ Stats received:', stats);
+      }
+      
+      return stats;
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('❌ Error fetching stats:', error);
+      this.logNetworkError(error);
       return [];
     }
+  }
+
+  // Enhanced error logging
+  private logNetworkError(error: any): void {
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        console.error('🚫 Network error: Is the backend running?');
+        console.error(`🔧 Check if ${this.config.baseUrl} is accessible`);
+        console.error('🔧 Verify your IP address in .env.local');
+      } else if (error.message.includes('CORS')) {
+        console.error('🚫 CORS error: Backend CORS configuration issue');
+      } else if (error.message.includes('Timeout')) {
+        console.error('🚫 Request timeout: Backend took too long to respond');
+      }
+    }
+    
+    console.error('🔧 Current config:', this.config);
   }
 
   calculateQuestionScore(
@@ -127,6 +334,36 @@ class ApiService {
 
       const scoreRatio = Math.max(0, (correctSelections - wrongSelections) / totalCorrect);
       return Math.floor(basePoints * scoreRatio);
+    }
+  }
+
+  // Utility method to get current configuration (for debugging)
+  getConfig(): ApiConfig {
+    return this.config;
+  }
+
+  // Method to test different backend URLs without rebuilding
+  async testConnection(testUrl?: string): Promise<{ success: boolean; message: string; latency?: number }> {
+    const originalBaseUrl = this.config.baseUrl;
+    
+    if (testUrl) {
+      this.config.baseUrl = testUrl;
+    }
+    
+    try {
+      const healthResult = await this.healthCheck();
+      const message = healthResult.connected 
+        ? `✅ Connected successfully (${healthResult.latency}ms)`
+        : `❌ Connection failed: ${healthResult.error}`;
+      
+      return {
+        success: healthResult.connected,
+        message,
+        latency: healthResult.latency
+      };
+    } finally {
+      // Restore original URL
+      this.config.baseUrl = originalBaseUrl;
     }
   }
 }

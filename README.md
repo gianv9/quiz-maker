@@ -255,6 +255,11 @@ cd android
 ionic-frontend/quiz-app/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
+**One Liner to sync, build, and install**
+```
+ionic capacitor sync android && ionic capacitor sync android && cd android && ./gradlew assembleDebug && adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
 ### Install APK on Device
 
 **USB Installation:**

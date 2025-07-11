@@ -10,7 +10,7 @@ import json
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, origins=['http://localhost:8100', 'https://yourdomain.com'])
+CORS(app, origins=['*'])  # Allow all origins for development
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
 def get_db():

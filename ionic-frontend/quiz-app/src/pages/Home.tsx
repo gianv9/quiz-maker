@@ -1,4 +1,4 @@
-// src/pages/Home.tsx
+// src/pages/Home.tsx - Add debug tools to test API
 import React, { useState, useEffect } from 'react';
 import {
   IonContent,
@@ -21,8 +21,9 @@ import {
   IonIcon,
   IonLoading,
   IonToast,
+  IonAlert,
 } from '@ionic/react';
-import { gameController, trophy, shuffle } from 'ionicons/icons';
+import { gameController, trophy, shuffle, bug } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { apiService } from '../services/api';
 import './Home.css';
@@ -36,6 +37,8 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [showDebugAlert, setShowDebugAlert] = useState(false);
+  const [debugResult, setDebugResult] = useState<string>('');
 
   useEffect(() => {
     loadTopics();
@@ -69,6 +72,45 @@ const Home: React.FC = () => {
     history.push(`/game/${topic}/${selectedDifficulty}?${params}`);
   };
 
+  // Debug function to test questions API
+  const debugQuestionAPI = async () => {
+    try {
+      console.log('🐛 Starting API debug test...');
+      
+      // Test current configuration
+      const config = apiService.getConfig();
+      console.log('🔧 Current API config:', config);
+      
+      // Test connection
+      const connectionTest = await apiService.testConnection();
+      console.log('🌐 Connection test:', connectionTest);
+      
+      // Test topics (we know this works)
+      console.log('📋 Testing topics API...');
+      const topicsResult = await apiService.getTopics();
+      console.log('✅ Topics result:', topicsResult);
+      
+      // Test questions API with the parameters we'd use
+      const testTopic = 'mixed';
+      const testDifficulty = 'medium';
+      const testCount = '5';
+      
+      console.log('❓ Testing questions API...');
+      console.log(`📡 URL will be: ${config.baseUrl}/api/questions/${testTopic}/${testDifficulty}?count=${testCount}`);
+      
+      const questionsResult = await apiService.getQuestions(testTopic, testDifficulty, testCount);
+      console.log('✅ Questions result:', questionsResult);
+      
+      setDebugResult(`✅ All tests passed!\n\nConfig: ${JSON.stringify(config, null, 2)}\n\nTopics: ${topicsResult.length} found\nQuestions: ${questionsResult.length} found\n\nFirst question: ${questionsResult[0]?.question?.substring(0, 100)}...`);
+      setShowDebugAlert(true);
+      
+    } catch (error: any) {
+      console.error('❌ Debug test failed:', error);
+      setDebugResult(`❌ Debug test failed!\n\nError: ${error.message}\n\nConfig: ${JSON.stringify(apiService.getConfig(), null, 2)}\n\nCheck console for detailed logs.`);
+      setShowDebugAlert(true);
+    }
+  };
+
   const formatTopicName = (topic: string) => {
     return topic.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
@@ -97,6 +139,30 @@ const Home: React.FC = () => {
           <h1>Choose Your Learning Path</h1>
           <p>Select a topic and difficulty to start your quiz</p>
         </div>
+
+        {/* Debug Section - Only show in development */}
+        {(!!(window as any).Capacitor?.isNativePlatform?.() || import.meta.env.DEV) && (
+          <IonCard className="debug-card" style={{margin: '16px', border: '2px dashed #ff6b6b'}}>
+            <IonCardHeader>
+              <IonCardTitle style={{color: '#ff6b6b', fontSize: '0.9rem'}}>
+                🐛 Debug Tools (Dev Only)
+              </IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <IonButton 
+                size="small" 
+                color="warning"
+                onClick={debugQuestionAPI}
+              >
+                <IonIcon icon={bug} slot="start" />
+                Test Questions API
+              </IonButton>
+              <p style={{fontSize: '0.8rem', marginTop: '8px', color: '#666'}}>
+                If quiz loading fails, click this to debug the questions API
+              </p>
+            </IonCardContent>
+          </IonCard>
+        )}
 
         {/* Quiz Settings */}
         <IonCard className="settings-card">
@@ -196,6 +262,14 @@ const Home: React.FC = () => {
           message={toastMessage}
           duration={3000}
           position="bottom"
+        />
+
+        <IonAlert
+          isOpen={showDebugAlert}
+          onDidDismiss={() => setShowDebugAlert(false)}
+          header="🐛 API Debug Results"
+          message={debugResult}
+          buttons={['OK']}
         />
       </IonContent>
     </IonPage>
