@@ -7,8 +7,10 @@ import random
 import time
 import sys
 import json
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, origins=['http://localhost:8100', 'https://yourdomain.com'])
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
 def get_db():
@@ -34,6 +36,48 @@ def get_db():
             else:
                 print(f"Failed to connect to database after {max_retries} attempts")
                 raise e
+            
+@app.route('/api/topics')
+def get_topics():
+    """API endpoint to get available topics"""
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT DISTINCT topic FROM questions ORDER BY topic")
+                topics = [row['topic'] for row in cur.fetchall()]
+        return jsonify(topics)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stats')
+def get_stats():
+    """API endpoint to get user statistics"""
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT topic, difficulty, AVG(score) as avg_score, 
+                           AVG(CASE WHEN total_questions > 0 
+                               THEN correct_answers::float/total_questions 
+                               ELSE 0 END) as avg_percentage,
+                           COUNT(*) as attempts
+                    FROM scores 
+                    WHERE total_questions > 0
+                    GROUP BY topic, difficulty 
+                    ORDER BY topic, difficulty
+                """)
+                stats = []
+                for row in cur.fetchall():
+                    stats.append({
+                        'topic': row['topic'],
+                        'difficulty': row['difficulty'],
+                        'avg_score': float(row['avg_score']),
+                        'avg_percentage': float(row['avg_percentage']),
+                        'attempts': int(row['attempts'])
+                    })
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/')
 def index():

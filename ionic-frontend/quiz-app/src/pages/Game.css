@@ -1,0 +1,215 @@
+/* src/pages/Game.css */
+
+.game-content {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding-bottom: 20px;
+}
+
+.stats-card {
+  margin: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--ion-color-medium);
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--ion-color-primary);
+}
+
+.progress-bar {
+  margin: 0 16px 16px 16px;
+  height: 8px;
+  --progress-background: var(--ion-color-primary);
+  --background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.question-card {
+  margin: 16px;
+  border-radius: 12px;
+  background: white;
+}
+
+.question-type-badge {
+  margin-bottom: 16px;
+}
+
+.question-text {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: var(--ion-color-dark);
+}
+
+.answers-list {
+  background: transparent;
+}
+
+.answer-item {
+  --background: rgba(248, 249, 250, 0.8);
+  --border-radius: 8px;
+  margin-bottom: 8px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.answer-item:hover {
+  --background: rgba(52, 152, 219, 0.1);
+  border-color: var(--ion-color-primary);
+}
+
+.answer-item.correct {
+  --background: var(--ion-color-success);
+  --color: white;
+  border-color: var(--ion-color-success);
+}
+
+.answer-item.incorrect {
+  --background: var(--ion-color-danger);
+  --color: white;
+  border-color: var(--ion-color-danger);
+}
+
+.answer-text {
+  padding-left: 12px;
+}
+
+.feedback-card {
+  margin: 16px;
+  border-radius: 12px;
+}
+
+.feedback-card.success {
+  --background: var(--ion-color-success-tint);
+  border-left: 4px solid var(--ion-color-success);
+}
+
+.feedback-card.warning {
+  --background: var(--ion-color-warning-tint);
+  border-left: 4px solid var(--ion-color-warning);
+}
+
+.feedback-card.danger {
+  --background: var(--ion-color-danger-tint);
+  border-left: 4px solid var(--ion-color-danger);
+}
+
+.feedback-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+}
+
+.feedback-header ion-icon {
+  font-size: 1.5rem;
+}
+
+.references {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.references h4 {
+  margin-bottom: 8px;
+  color: var(--ion-color-primary);
+}
+
+.action-buttons {
+  padding: 16px;
+  padding-bottom: 32px;
+}
+
+.action-buttons ion-button {
+  margin-bottom: 8px;
+  --border-radius: 25px;
+}
+
+.final-results {
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.final-results ion-card {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.trophy-icon {
+  font-size: 3rem;
+  color: var(--ion-color-warning);
+  margin-bottom: 16px;
+}
+
+.score-display {
+  margin: 20px 0;
+}
+
+.score-display h2 {
+  font-size: 2.5rem;
+  color: var(--ion-color-success);
+  margin-bottom: 8px;
+}
+
+.score-display h3 {
+  font-size: 1.5rem;
+  color: var(--ion-color-medium);
+}
+
+.final-message {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 20px 0;
+  padding: 16px;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 8px;
+  color: var(--ion-color-primary);
+}
+
+.no-questions {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .stats-card {
+    background: rgba(32, 32, 32, 0.95);
+  }
+  
+  .question-card {
+    background: var(--ion-color-dark);
+  }
+  
+  .question-text {
+    color: var(--ion-color-light);
+  }
+  
+  .answer-item {
+    --background: rgba(68, 68, 68, 0.8);
+    --color: var(--ion-color-light);
+  }
+}
