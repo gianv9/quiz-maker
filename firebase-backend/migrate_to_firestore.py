@@ -4,7 +4,6 @@ import re
 import json
 import os
 
-# --- Start of new code ---
 # Get the project ID from the .firebaserc file
 project_id = None
 try:
@@ -27,7 +26,6 @@ cred = credentials.ApplicationDefault()
 firebase_admin.initialize_app(cred, {
     'projectId': project_id,
 })
-# --- End of new code ---
 
 db = firestore.client()
 
@@ -46,6 +44,76 @@ def delete_collection(coll_ref, batch_size):
     
     print(f"Deleted {deleted} documents from the collection.")
 
+def parse_sql_value(text, start_pos):
+    """Parse a single SQL value (string or array) starting at start_pos"""
+    text = text.strip()
+    
+    if start_pos >= len(text):
+        return None, start_pos
+    
+    # Skip whitespace and commas
+    while start_pos < len(text) and text[start_pos] in ' \t\n\r,':
+        start_pos += 1
+    
+    if start_pos >= len(text):
+        return None, start_pos
+    
+    if text[start_pos] == "'":
+        # Parse quoted string
+        start_pos += 1  # Skip opening quote
+        value = ""
+        while start_pos < len(text):
+            if text[start_pos] == "'":
+                # Check if it's an escaped quote
+                if start_pos + 1 < len(text) and text[start_pos + 1] == "'":
+                    value += "'"
+                    start_pos += 2
+                else:
+                    # End of string
+                    start_pos += 1
+                    break
+            else:
+                value += text[start_pos]
+                start_pos += 1
+        return value, start_pos
+    
+    elif text[start_pos] == '[':
+        # Parse JSON array
+        bracket_count = 1
+        start_pos += 1
+        value = "["
+        while start_pos < len(text) and bracket_count > 0:
+            char = text[start_pos]
+            value += char
+            if char == '[':
+                bracket_count += 1
+            elif char == ']':
+                bracket_count -= 1
+            start_pos += 1
+        return value, start_pos
+    
+    else:
+        # Parse unquoted value (shouldn't happen in our case)
+        value = ""
+        while start_pos < len(text) and text[start_pos] not in ',)':
+            value += text[start_pos]
+            start_pos += 1
+        return value.strip(), start_pos
+
+def parse_sql_tuple(tuple_content):
+    """Parse a SQL tuple into individual values"""
+    values = []
+    pos = 0
+    
+    while pos < len(tuple_content):
+        value, pos = parse_sql_value(tuple_content, pos)
+        if value is not None:
+            values.append(value)
+        else:
+            break
+    
+    return values
+
 def parse_sql_file(file_path):
     print(f"\n--- Parsing file: {file_path} ---")
     try:
@@ -58,55 +126,71 @@ def parse_sql_file(file_path):
     questions = []
     # This regex finds all INSERT statements and captures the VALUES block
     insert_pattern = re.compile(r"INSERT INTO questions .*? VALUES\s*(.*?);", re.DOTALL | re.IGNORECASE)
-    # This regex finds each individual row (tuple) within a VALUES block
-    row_pattern = re.compile(r"\\((.*?)\\)", re.DOTALL)
     
-    # This regex is designed to parse the fields from a single row
-    # It now expects the content *inside* the parentheses
-    row_parser = re.compile(r"""
-        \s*'([^']*)',  # 1. topic
-        \s*'([^']*)',  # 2. difficulty
-        \s*'([^']*)',  # 3. question_type
-        \s*'([^']*)',  # 4. question_text
-        \s*'([^']*)',  # 5. option_a
-        \s*'([^']*)',  # 6. option_b
-        \s*'([^']*)',  # 7. option_c
-        \s*'([^']*)',  # 8. option_d
-        \s*(\[[^\]]*\]),   # 9. correct_answers (JSONB, e.g., [0,1,3]) - explicitly match []
-        \s*'([^']*)',  # 10. explanation
-        \s*'([^']*)'   # 11. study_references (NO trailing comma here, as it's the last field in the tuple)
-    """, re.VERBOSE)
-
     for insert_match in insert_pattern.finditer(content):
         values_block = insert_match.group(1)
-        print(f"DEBUG: Full values block (before cleaning): {values_block[:200]}...")
+        print(f"DEBUG: Raw values block found: {values_block[:200]}...")
 
         # Remove single-line comments (-- ...)
         values_block = re.sub(r'--.*\n', '', values_block)
         # Remove multi-line comments (/* ... */)
         values_block = re.sub(r'/\*.*?\*/', '', values_block, flags=re.DOTALL)
-        # Remove empty lines and strip leading/trailing whitespace
-        values_block = '\n'.join([line.strip() for line in values_block.splitlines() if line.strip()])
 
-        print(f"DEBUG: Full values block (after cleaning): {values_block[:200]}...")
+        print(f"DEBUG: Cleaned values block: {values_block[:200]}...")
 
         # Find all individual tuples within the values_block
-        # This will capture the content *inside* each parenthesis pair
-        tuple_contents = re.findall(r'\\((.*?)\\)', values_block, re.DOTALL)
-        print(f"DEBUG: Found {len(tuple_contents)} raw tuples.")
+        # More robust tuple finding that handles nested parentheses and quotes
+        tuples = []
+        pos = 0
+        while pos < len(values_block):
+            # Skip whitespace
+            while pos < len(values_block) and values_block[pos] in ' \t\n\r':
+                pos += 1
+            
+            if pos >= len(values_block):
+                break
+                
+            if values_block[pos] == '(':
+                # Found start of tuple
+                paren_count = 1
+                start_pos = pos + 1
+                pos += 1
+                
+                while pos < len(values_block) and paren_count > 0:
+                    char = values_block[pos]
+                    if char == '(' and not_in_quotes(values_block, pos):
+                        paren_count += 1
+                    elif char == ')' and not_in_quotes(values_block, pos):
+                        paren_count -= 1
+                    pos += 1
+                
+                if paren_count == 0:
+                    tuple_content = values_block[start_pos:pos-1]
+                    tuples.append(tuple_content)
+                    print(f"DEBUG: Found tuple: {tuple_content[:100]}...")
+            else:
+                pos += 1
 
-        for row_content in tuple_contents:
-            print(f"DEBUG: Processing row content: {row_content[:100]}...") # Debug print
+        print(f"Found {len(tuples)} tuples in this INSERT statement.")
+        
+        for i, tuple_content in enumerate(tuples):
+            print(f"DEBUG: Processing tuple {i+1}: {tuple_content[:100]}...")
             
             try:
-                row_data = row_parser.search(row_content)
-                if not row_data:
-                    print(f"WARNING: Skipping malformed record (no match): {row_content[:70]}...")
-                    continue
-
-                groups = row_data.groups()
+                values = parse_sql_tuple(tuple_content)
                 
-                topic, difficulty, q_type, q_text, opt_a, opt_b, opt_c, opt_d, correct_answers_str, explanation, refs = groups
+                if len(values) != 11:
+                    print(f"WARNING: Expected 11 fields, got {len(values)}: {tuple_content[:70]}...")
+                    continue
+                
+                topic, difficulty, q_type, q_text, opt_a, opt_b, opt_c, opt_d, correct_answers_str, explanation, refs = values
+
+                # Parse the JSONB array
+                try:
+                    correct_answers = json.loads(correct_answers_str)
+                except json.JSONDecodeError as e:
+                    print(f"ERROR: Invalid JSON in correct_answers: {correct_answers_str} - {e}")
+                    continue
 
                 questions.append({
                     'topic': topic,
@@ -114,22 +198,33 @@ def parse_sql_file(file_path):
                     'question_type': q_type,
                     'question_text': q_text,
                     'options': [opt_a, opt_b, opt_c, opt_d],
-                    'correct_answers': json.loads(correct_answers_str),
+                    'correct_answers': correct_answers,
                     'explanation': explanation,
-                    'study_references': refs.split('|')
+                    'study_references': refs.split('|') if refs else []
                 })
+                
+                print(f"SUCCESS: Parsed question: {q_text[:50]}...")
+                
             except Exception as e:
-                print(f"ERROR parsing a record: {row_content[:70]}... - {e}")
+                print(f"ERROR parsing tuple: {tuple_content[:70]}... - {e}")
 
     print(f"Successfully parsed {len(questions)} questions from this file.")
     return questions
 
+def not_in_quotes(text, pos):
+    """Check if position is not inside a quoted string"""
+    quote_count = 0
+    for i in range(pos):
+        if text[i] == "'" and (i == 0 or text[i-1] != "\\"):
+            quote_count += 1
+    return quote_count % 2 == 0
 
 def upload_to_firestore(questions):
     questions_ref = db.collection('questions')
     print("\n--- Uploading to Firestore ---")
     for q in questions:
         questions_ref.add(q)
+        print(f"Uploaded: {q['question_text'][:50]}...")
     print(f"Uploaded {len(questions)} questions to Firestore.")
 
 if __name__ == '__main__':
@@ -144,7 +239,12 @@ if __name__ == '__main__':
     
     # Combine and remove duplicates that might exist between the two files
     # A simple way to deduplicate is to use a dictionary with question_text as key
-    unique_questions = {q['question_text']: q for q in questions1 + questions2}
+    all_questions = questions1 + questions2
+    unique_questions = {q['question_text']: q for q in all_questions}
+    
+    print(f"\n--- Summary ---")
+    print(f"Questions from 01-init.sql: {len(questions1)}")
+    print(f"Questions from 02-sample_questions.sql: {len(questions2)}")
+    print(f"Total unique questions: {len(unique_questions)}")
     
     upload_to_firestore(list(unique_questions.values()))
-
