@@ -1,3 +1,5 @@
+import { appConfig } from '../config/environment';
+
 // src/services/api.ts - Fixed Version with No Hardcoded URLs
 
 export interface Question {
@@ -41,8 +43,12 @@ interface ApiConfig {
   debugMode: boolean;
 }
 
+
 class ApiService {
-  private config: ApiConfig;
+  private config = {
+    baseUrl: appConfig.baseUrl,  // Changed from API_BASE_URL
+    debugMode: appConfig.debugMode
+  };
 
   constructor() {
     this.config = this.determineApiConfig();
@@ -165,12 +171,18 @@ class ApiService {
 
   async getTopics(): Promise<string[]> {
     try {
+      const url = `${this.config.baseUrl}/api/topics`;
+      
       if (this.config.debugMode) {
-        console.log('📡 Health check:', await this.healthCheck());
-        console.log('📡 Fetching topics from:', `${this.config.baseUrl}/api/topics`);
+        console.log('📡 Making request to:', url);
       }
       
-      const response = await fetch(`${this.config.baseUrl}/api/topics`);
+      const response = await fetch(url);
+      
+      if (this.config.debugMode) {
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', response.headers);
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -338,8 +350,13 @@ class ApiService {
   }
 
   // Utility method to get current configuration (for debugging)
-  getConfig(): ApiConfig {
-    return this.config;
+  getConfig() {
+    return {
+      baseUrl: this.config.baseUrl,
+      environment: this.config.debugMode ? 'development' : 'production',
+      platform: !!(window as any).Capacitor?.isNativePlatform?.() ? 'native' : 'web',
+      debugMode: this.config.debugMode
+    };
   }
 
   // Method to test different backend URLs without rebuilding

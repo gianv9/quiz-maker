@@ -376,9 +376,8 @@ const Game: React.FC = () => {
                     />
                   ) : (
                     <IonRadio
-                      value={index}
-                      checked={selectedAnswers.includes(index)}
-                      disabled={showFeedback}
+                    value={index}
+                    disabled={showFeedback}
                     />
                   )}
                   <IonLabel className="answer-text">{answer}</IonLabel>

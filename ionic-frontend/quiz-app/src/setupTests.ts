@@ -15,6 +15,10 @@ window.matchMedia = window.matchMedia || function() {
 
 // Mock IntersectionObserver for Ionic components
 global.IntersectionObserver = class IntersectionObserver {
+  root: Element | null = null;
+  rootMargin: string = '';
+  thresholds: ReadonlyArray<number> = [];
+  
   constructor() {}
   
   observe() {
@@ -27,6 +31,10 @@ global.IntersectionObserver = class IntersectionObserver {
   
   unobserve() {
     return null;
+  }
+  
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
   }
 };
 

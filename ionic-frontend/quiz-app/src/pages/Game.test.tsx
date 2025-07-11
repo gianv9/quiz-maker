@@ -2,14 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Game from './Game';
-import { apiService } from '../services/api';
 import { mockQuestions } from '../mocks/api';
 
 // Mock Ionic overlay components
 vi.mock('@ionic/react', async () => {
-  const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
+  const actual = await vi.importActual('@ionic/react');
   return {
-    ...actual,
+    ...(actual as any),
     IonLoading: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Loading questions...</div> : null),
     IonToast: ({ isOpen, message }: { isOpen: boolean; message: string }) => (isOpen ? <div role="status">{message}</div> : null),
     IonAlert: ({ isOpen, header, message, buttons }: any) => (isOpen ? <div>{header}{message}</div> : null),
@@ -17,17 +16,18 @@ vi.mock('@ionic/react', async () => {
 });
 
 // Mock the apiService
+const mockApiService = {
+  getQuestions: vi.fn(),
+  submitScore: vi.fn(),
+  calculateQuestionScore: vi.fn((question_type: string, correct_answers: number[], user_answers: number[], difficulty: string) => {
+      const basePoints: Record<string, number> = { easy: 10, medium: 20, hard: 30 };
+      const correctUserAnswers = user_answers.filter((a: number) => correct_answers.includes(a));
+      return correctUserAnswers.length > 0 ? basePoints[difficulty] || 10 : 0;
+  }),
+};
+
 vi.mock('../services/api', () => ({
-  apiService: {
-    getQuestions: vi.fn(),
-    submitScore: vi.fn(),
-    calculateQuestionScore: vi.fn((question_type, correct_answers, user_answers, difficulty) => {
-        // A simplified mock for score calculation
-        const basePoints = { easy: 10, medium: 20, hard: 30 }[difficulty] || 10;
-        const correctUserAnswers = user_answers.filter(a => correct_answers.includes(a));
-        return correctUserAnswers.length > 0 ? basePoints : 0;
-    }),
-  },
+  apiService: mockApiService,
 }));
 
 // Mock the router hooks
@@ -35,7 +35,7 @@ const mockHistoryPush = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
-    ...actual,
+    ...(actual as any),
     useHistory: () => ({
       push: mockHistoryPush,
     }),
@@ -50,8 +50,8 @@ describe('Game Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Mock successful API calls by default
-    apiService.getQuestions.mockResolvedValue(mockQuestions);
-    apiService.submitScore.mockResolvedValue({ success: true });
+    mockApiService.getQuestions.mockResolvedValue(mockQuestions);
+    mockApiService.submitScore.mockResolvedValue({ success: true });
   });
 
   const renderGame = () => {
@@ -72,7 +72,7 @@ describe('Game Page', () => {
     });
     
     // Mock getQuestions to return our controllable promise
-    apiService.getQuestions.mockReturnValue(controllablePromise);
+    mockApiService.getQuestions.mockReturnValue(controllablePromise);
     
     // Render the component
     renderGame();
@@ -104,7 +104,7 @@ describe('Game Page', () => {
   });
 
   it('should display an error if questions fail to load', async () => {
-    apiService.getQuestions.mockRejectedValue(new Error('API Error'));
+    mockApiService.getQuestions.mockRejectedValue(new Error('API Error'));
     
     await act(async () => {
       renderGame();
@@ -283,7 +283,7 @@ describe('Game Page', () => {
     });
 
     // Expect submitScore to have been called and navigation to occur
-    expect(apiService.submitScore).toHaveBeenCalledTimes(1);
+    expect(mockApiService.submitScore).toHaveBeenCalledTimes(1);
     expect(mockHistoryPush).toHaveBeenCalledWith('/results');
   });
 });

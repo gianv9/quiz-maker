@@ -172,12 +172,12 @@ const Home: React.FC = () => {
           <IonCardContent>
             <IonItem>
               <IonLabel>Difficulty Level</IonLabel>
-              <IonSelect
+                <IonSelect
                 value={selectedDifficulty}
-                onSelectionChange={e => setSelectedDifficulty(e.detail.value)}
+                onIonChange={(e: any) => setSelectedDifficulty(e.detail.value)}
                 interface="popover"
                 data-testid="difficulty-select"
-              >
+                >
                 <IonSelectOption value="easy">Easy (10 pts)</IonSelectOption>
                 <IonSelectOption value="medium">Medium (20 pts)</IonSelectOption>
                 <IonSelectOption value="hard">Hard (30 pts)</IonSelectOption>
@@ -186,11 +186,11 @@ const Home: React.FC = () => {
             
             <IonItem>
               <IonLabel>Number of Questions</IonLabel>
-              <IonSelect
+                <IonSelect
                 value={questionCount}
-                onSelectionChange={e => setQuestionCount(e.detail.value)}
+                onIonChange={(e: any) => setQuestionCount(e.detail.value)}
                 interface="popover"
-              >
+                >
                 <IonSelectOption value="5">5 Questions</IonSelectOption>
                 <IonSelectOption value="10">10 Questions</IonSelectOption>
                 <IonSelectOption value="15">15 Questions</IonSelectOption>

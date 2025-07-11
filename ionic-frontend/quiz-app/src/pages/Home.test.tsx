@@ -2,13 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './Home';
-import { apiService } from '../services/api';
 
 // Mock Ionic overlay components
 vi.mock('@ionic/react', async () => {
-  const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
+  const actual = await vi.importActual('@ionic/react');
   return {
-    ...actual,
+    ...(actual as any),
     IonLoading: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Loading topics...</div> : null),
     IonToast: ({ isOpen, message }: { isOpen: boolean; message: string }) => (isOpen ? <div>{message}</div> : null),
     IonAlert: ({ isOpen, header, message }: { isOpen: boolean; header: string; message: string }) => (isOpen ? <div>{header}{message}</div> : null),
@@ -16,13 +15,15 @@ vi.mock('@ionic/react', async () => {
 });
 
 // Mock the apiService
+const mockApiService = {
+  getTopics: vi.fn(),
+  testConnection: vi.fn(),
+  getQuestions: vi.fn(),
+  getConfig: vi.fn().mockReturnValue({ baseUrl: 'http://localhost:5000' }),
+};
+
 vi.mock('../services/api', () => ({
-  apiService: {
-    getTopics: vi.fn(),
-    testConnection: vi.fn(),
-    getQuestions: vi.fn(),
-    getConfig: vi.fn().mockReturnValue({ baseUrl: 'http://localhost:5000' }),
-  },
+  apiService: mockApiService,
 }));
 
 // Mock the useHistory hook
@@ -30,7 +31,7 @@ const mockHistoryPush = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
-    ...actual,
+    ...(actual as any),
     useHistory: () => ({
       push: mockHistoryPush,
     }),
@@ -39,11 +40,12 @@ vi.mock('react-router-dom', async () => {
 
 describe('Home Page', () => {
   beforeEach(() => {
-    // Clear mock history before each test
     vi.clearAllMocks();
     // Set up default resolved topics
-    apiService.getTopics.mockResolvedValue(['aws-services', 'aws-security']);
+    mockApiService.getTopics.mockResolvedValue(['aws-services', 'aws-security']);
   });
+
+  // ... rest of your tests using mockApiService
 
   it('should render the main title', async () => {
     await act(async () => {
@@ -99,7 +101,7 @@ describe('Home Page', () => {
 
   it('should fetch and display topics on load', async () => {
     const mockTopics = ['aws-services', 'aws-security'];
-    apiService.getTopics.mockResolvedValue(mockTopics);
+    mockApiService.getTopics.mockResolvedValue(mockTopics);
 
     await act(async () => {
       render(
@@ -120,7 +122,7 @@ describe('Home Page', () => {
   });
 
   it('should display default topics if API fails', async () => {
-    apiService.getTopics.mockRejectedValue(new Error('API Error'));
+    mockApiService.getTopics.mockRejectedValue(new Error('API Error'));
 
     await act(async () => {
       render(
@@ -143,7 +145,7 @@ describe('Home Page', () => {
 
   it('should navigate to the game page when a topic is clicked', async () => {
     const mockTopics = ['aws-storage'];
-    apiService.getTopics.mockResolvedValue(mockTopics);
+    mockApiService.getTopics.mockResolvedValue(mockTopics);
 
     await act(async () => {
       render(

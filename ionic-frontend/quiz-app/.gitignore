@@ -2,8 +2,6 @@
 
 # Custom additions to the default Ionic gitignore
 # Capacitor
-android/
-ios/
 .capacitor/
 
 # Mobile builds

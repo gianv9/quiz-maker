@@ -2,14 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Results from './Results';
-import { apiService } from '../services/api';
 import { mockStats } from '../mocks/api';
 
 // Mock Ionic overlay components and Refresher
 vi.mock('@ionic/react', async () => {
-  const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
+  const actual = await vi.importActual('@ionic/react');
   return {
-    ...actual,
+    ...(actual as any),
     IonLoading: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Loading statistics...</div> : null),
     IonToast: ({ isOpen, message }: { isOpen: boolean; message: string }) => (isOpen ? <div role="status">{message}</div> : null),
     IonRefresher: ({ children, onIonRefresh }: any) => (
@@ -17,15 +16,17 @@ vi.mock('@ionic/react', async () => {
         {children}
       </div>
     ),
-    IonRefresherContent: () => null, // Mock content as it's not relevant for logic
+    IonRefresherContent: () => null,
   };
 });
 
 // Mock the apiService
+const mockApiService = {
+  getStats: vi.fn(),
+};
+
 vi.mock('../services/api', () => ({
-  apiService: {
-    getStats: vi.fn(),
-  },
+  apiService: mockApiService,
 }));
 
 // Mock the useHistory hook
@@ -33,7 +34,7 @@ const mockHistoryPush = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
-    ...actual,
+    ...(actual as any),
     useHistory: () => ({
       push: mockHistoryPush,
     }),
@@ -44,8 +45,10 @@ describe('Results Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock for successful stats load
-    apiService.getStats.mockResolvedValue(mockStats);
+    mockApiService.getStats.mockResolvedValue(mockStats);
   });
+
+  // ... rest of your tests using mockApiService
 
   const renderResults = () => {
     return render(
@@ -62,7 +65,7 @@ describe('Results Page', () => {
       resolvePromise = resolve;
     });
     
-    apiService.getStats.mockReturnValue(controllablePromise);
+    mockApiService.getStats.mockReturnValue(controllablePromise);
     
     renderResults();
     
@@ -101,7 +104,7 @@ describe('Results Page', () => {
   });
 
   it('should display "No Statistics Yet!" if no stats are available', async () => {
-    apiService.getStats.mockResolvedValue([]); // Mock empty stats
+    mockApiService.getStats.mockResolvedValue([]); // Mock empty stats
     
     await act(async () => {
       renderResults();
@@ -119,7 +122,7 @@ describe('Results Page', () => {
   });
 
   it('should display an error toast if statistics fail to load', async () => {
-    apiService.getStats.mockRejectedValue(new Error('API Error'));
+    mockApiService.getStats.mockRejectedValue(new Error('API Error'));
     
     await act(async () => {
       renderResults();
@@ -161,8 +164,8 @@ describe('Results Page', () => {
       expect(screen.queryByText('Loading statistics...')).not.toBeInTheDocument();
     });
 
-    apiService.getStats.mockClear(); // Clear previous call
-    apiService.getStats.mockResolvedValueOnce(mockStats); // Mock for the refresh call
+    mockApiService.getStats.mockClear(); // Clear previous call
+    mockApiService.getStats.mockResolvedValueOnce(mockStats); // Mock for the refresh call
 
     // Use text-based selector
     const refreshButton = screen.getByTestId('refresh-stats-button');
@@ -172,7 +175,7 @@ describe('Results Page', () => {
     });
 
     await waitFor(() => {
-      expect(apiService.getStats).toHaveBeenCalledTimes(1);
+      expect(mockApiService.getStats).toHaveBeenCalledTimes(1);
     });
   });
 });
