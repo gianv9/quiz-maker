@@ -112,7 +112,7 @@ const Home: React.FC = () => {
   };
 
   const formatTopicName = (topic: string) => {
-    return topic.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return topic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -176,6 +176,7 @@ const Home: React.FC = () => {
                 value={selectedDifficulty}
                 onSelectionChange={e => setSelectedDifficulty(e.detail.value)}
                 interface="popover"
+                data-testid="difficulty-select"
               >
                 <IonSelectOption value="easy">Easy (10 pts)</IonSelectOption>
                 <IonSelectOption value="medium">Medium (20 pts)</IonSelectOption>
@@ -240,6 +241,7 @@ const Home: React.FC = () => {
             color={getDifficultyColor(selectedDifficulty)}
             onClick={() => startQuiz('mixed')}
             className="start-button"
+            data-testid="start-quiz-button"
           >
             <IonIcon icon={gameController} slot="start" />
             Start {selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)} Quiz
