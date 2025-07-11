@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './Home';
 import { apiService } from '../services/api';
@@ -41,44 +41,58 @@ describe('Home Page', () => {
   beforeEach(() => {
     // Clear mock history before each test
     vi.clearAllMocks();
+    // Set up default resolved topics
+    apiService.getTopics.mockResolvedValue(['aws-services', 'aws-security']);
   });
 
-  it('should render the main title', () => {
-    render(
-      <IonReactRouter>
-        <Home />
-      </IonReactRouter>
-    );
+  it('should render the main title', async () => {
+    await act(async () => {
+      render(
+        <IonReactRouter>
+          <Home />
+        </IonReactRouter>
+      );
+    });
+    
     const titleElement = screen.getByText('🎯 AWS Knowledge Quest');
     expect(titleElement).toBeInTheDocument();
   });
 
-  it('should display the main heading', () => {
-    render(
-      <IonReactRouter>
-        <Home />
-      </IonReactRouter>
-    );
+  it('should display the main heading', async () => {
+    await act(async () => {
+      render(
+        <IonReactRouter>
+          <Home />
+        </IonReactRouter>
+      );
+    });
+    
     const heading = screen.getByRole('heading', { name: /Choose Your Learning Path/i });
     expect(heading).toBeInTheDocument();
   });
 
-  it('should render the start quiz button', () => {
-    render(
-      <IonReactRouter>
-        <Home />
-      </IonReactRouter>
-    );
+  it('should render the start quiz button', async () => {
+    await act(async () => {
+      render(
+        <IonReactRouter>
+          <Home />
+        </IonReactRouter>
+      );
+    });
+    
     const startButton = screen.getByTestId('start-quiz-button');
     expect(startButton).toBeInTheDocument();
   });
 
-  it('should have difficulty set to Medium by default', () => {
-    render(
-      <IonReactRouter>
-        <Home />
-      </IonReactRouter>
-    );
+  it('should have difficulty set to Medium by default', async () => {
+    await act(async () => {
+      render(
+        <IonReactRouter>
+          <Home />
+        </IonReactRouter>
+      );
+    });
+    
     const difficultySelect = screen.getByTestId('difficulty-select') as HTMLIonSelectElement;
     expect(difficultySelect.value).toBe('medium');
   });
@@ -87,11 +101,13 @@ describe('Home Page', () => {
     const mockTopics = ['aws-services', 'aws-security'];
     apiService.getTopics.mockResolvedValue(mockTopics);
 
-    render(
-      <IonReactRouter>
-        <Home />
-      </IonReactRouter>
-    );
+    await act(async () => {
+      render(
+        <IonReactRouter>
+          <Home />
+        </IonReactRouter>
+      );
+    });
 
     // Wait for the loading to disappear
     await waitFor(() => {
@@ -106,11 +122,13 @@ describe('Home Page', () => {
   it('should display default topics if API fails', async () => {
     apiService.getTopics.mockRejectedValue(new Error('API Error'));
 
-    render(
-      <IonReactRouter>
-        <Home />
-      </IonReactRouter>
-    );
+    await act(async () => {
+      render(
+        <IonReactRouter>
+          <Home />
+        </IonReactRouter>
+      );
+    });
 
     await waitFor(() => {
       expect(screen.queryByText('Loading topics...')).not.toBeInTheDocument();
@@ -127,20 +145,24 @@ describe('Home Page', () => {
     const mockTopics = ['aws-storage'];
     apiService.getTopics.mockResolvedValue(mockTopics);
 
-    render(
-      <IonReactRouter>
-        <Home />
-      </IonReactRouter>
-    );
+    await act(async () => {
+      render(
+        <IonReactRouter>
+          <Home />
+        </IonReactRouter>
+      );
+    });
 
     await waitFor(() => {
       expect(screen.queryByText('Loading topics...')).not.toBeInTheDocument();
     });
 
     const topicCard = await screen.findByRole('heading', { name: /AWS Storage/i });
-    fireEvent.click(topicCard);
+    
+    await act(async () => {
+      fireEvent.click(topicCard);
+    });
 
     expect(mockHistoryPush).toHaveBeenCalledWith('/game/aws-storage/medium?count=10');
   });
 });
-''

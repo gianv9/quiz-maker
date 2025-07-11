@@ -165,6 +165,11 @@ const Game: React.FC = () => {
     }
   };
 
+  // Navigation function that works in tests
+  const navigateToResults = () => {
+    history.push('/results');
+  };
+
   const getAnswerStatus = (index: number) => {
     if (!showFeedback) return '';
     
@@ -260,7 +265,12 @@ const Game: React.FC = () => {
                       </IonButton>
                     </IonCol>
                     <IonCol>
-                      <IonButton expand="block" fill="outline" routerLink="/results">
+                      <IonButton 
+                        expand="block" 
+                        fill="outline" 
+                        onClick={navigateToResults}
+                        data-testid="view-statistics-button"
+                      >
                         <IonIcon icon={trophy} slot="start" />
                         View Statistics
                       </IonButton>
@@ -408,6 +418,7 @@ const Game: React.FC = () => {
               onClick={submitAnswer}
               disabled={selectedAnswers.length === 0}
               color="primary"
+              data-testid="submit-answer-button"
             >
               Submit Answer
             </IonButton>
@@ -416,6 +427,7 @@ const Game: React.FC = () => {
               expand="block"
               onClick={nextQuestion}
               color="success"
+              data-testid="next-question-button"
             >
               <IonIcon icon={arrowForward} slot="end" />
               {currentIndex + 1 >= questions.length ? 'Finish Quiz' : 'Next Question'}

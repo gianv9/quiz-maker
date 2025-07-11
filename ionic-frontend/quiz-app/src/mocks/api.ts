@@ -1,4 +1,4 @@
-import { Question } from '../services/api';
+import { Question, Stats } from '../services/api';
 
 export const mockQuestions: Question[] = [
   {
@@ -18,5 +18,29 @@ export const mockQuestions: Question[] = [
     question_type: 'multiple-choice',
     explanation: 'The five pillars are Operational Excellence, Security, Reliability, Performance Efficiency, and Cost Optimization.',
     references: ['https://aws.amazon.com/architecture/well-architected/'],
+  },
+];
+
+export const mockStats: Stats[] = [
+  {
+    topic: 'aws-services',
+    difficulty: 'medium',
+    avg_score: 85,
+    avg_percentage: 0.85,
+    attempts: 3,
+  },
+  {
+    topic: 'aws-security',
+    difficulty: 'hard',
+    avg_score: 75,
+    avg_percentage: 0.75,
+    attempts: 2,
+  },
+  {
+    topic: 'mixed',
+    difficulty: 'easy',
+    avg_score: 90,
+    avg_percentage: 0.90,
+    attempts: 1,
   },
 ];

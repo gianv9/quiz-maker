@@ -23,10 +23,12 @@ import {
   RefresherEventDetail,
 } from '@ionic/react';
 import { home, refresh, trophy, trendingUp } from 'ionicons/icons';
+import { useHistory } from 'react-router-dom';
 import { apiService, Stats } from '../services/api';
 import './Results.css';
 
 const Results: React.FC = () => {
+  const history = useHistory();
   const [stats, setStats] = useState<Stats[]>([]);
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
@@ -39,10 +41,11 @@ const Results: React.FC = () => {
   const loadStats = async () => {
     try {
       const statistics = await apiService.getStats();
-      setStats(statistics);
+      setStats(statistics || []); // Ensure stats is always an array
     } catch (error) {
       setToastMessage('Failed to load statistics');
       setShowToast(true);
+      setStats([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -84,7 +87,8 @@ const Results: React.FC = () => {
   };
 
   const calculateOverallStats = () => {
-    if (stats.length === 0) return null;
+    // Add safety check for stats
+    if (!stats || !Array.isArray(stats) || stats.length === 0) return null;
 
     const totalAttempts = stats.reduce((sum, stat) => sum + stat.attempts, 0);
     const avgPercentage = stats.reduce((sum, stat) => sum + (stat.avg_percentage * stat.attempts), 0) / totalAttempts;
@@ -96,6 +100,15 @@ const Results: React.FC = () => {
       avgScore,
       topicsStudied: new Set(stats.map(s => s.topic)).size
     };
+  };
+
+  // Navigation functions for testability
+  const navigateToHome = () => {
+    history.push('/home');
+  };
+
+  const refreshStats = () => {
+    loadStats();
   };
 
   const overallStats = calculateOverallStats();
@@ -148,7 +161,7 @@ const Results: React.FC = () => {
         )}
 
         {/* Individual Statistics */}
-        {stats.length > 0 ? (
+        {stats && stats.length > 0 ? (
           <IonCard className="detailed-stats-card">
             <IonCardHeader>
               <IonCardTitle>Detailed Statistics</IonCardTitle>
@@ -210,8 +223,9 @@ const Results: React.FC = () => {
                 <IonButton 
                   expand="block" 
                   color="primary" 
-                  routerLink="/home"
+                  onClick={navigateToHome}
                   className="start-quiz-button"
+                  data-testid="start-first-quiz-button"
                 >
                   Start Your First Quiz
                 </IonButton>
@@ -225,7 +239,8 @@ const Results: React.FC = () => {
           <IonButton 
             expand="block" 
             color="primary" 
-            routerLink="/home"
+            onClick={navigateToHome}
+            data-testid="back-to-menu-button"
           >
             <IonIcon icon={home} slot="start" />
             Back to Menu
@@ -235,7 +250,8 @@ const Results: React.FC = () => {
             expand="block" 
             fill="outline" 
             color="medium"
-            onClick={loadStats}
+            onClick={refreshStats}
+            data-testid="refresh-stats-button"
           >
             <IonIcon icon={refresh} slot="start" />
             Refresh Statistics
