@@ -255,6 +255,11 @@ cd android
 ionic-frontend/quiz-app/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
+**One Liner to sync, build, and install**
+```
+ionic capacitor sync android && ionic capacitor sync android && cd android && ./gradlew assembleDebug && adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
 ### Install APK on Device
 
 **USB Installation:**
@@ -373,6 +378,142 @@ This project is designed for easy deployment on various platforms:
 - **Development**: Docker Compose (current setup)
 - **Production**: Planned support for AWS ECS, Kubernetes, Railway, etc.
 - **Analytics**: Metabase integration for advanced reporting
+
+### 🤖📦 Android Production Builds
+
+#### Current Status
+- ✅ Development builds working (`npm run android:dev`)
+- ✅ Web builds working
+- ⏳ Production builds require signing configuration
+
+#### TODO - Production Build Setup
+- [ ] Configure Android keystore for production builds
+- [ ] Set up signing configuration in build.gradle
+- [ ] Create production build scripts
+- [ ] Test production APK generation
+- [ ] Document Play Store publishing process
+- [ ] Set up CI/CD for automated builds (optional)
+
+#### Production Build Options
+
+##### Option 1: Configure Signing in build.gradle (Recommended)
+
+1. **Generate a keystore** (one-time setup):
+   ```bash
+   cd android/app
+   keytool -genkey -v -keystore my-release-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
+   ```
+
+2. **Update `android/app/build.gradle`**:
+   ```gradle
+   android {
+       signingConfigs {
+           release {
+               if (project.hasProperty('MYAPP_RELEASE_STORE_FILE')) {
+                   storeFile file(MYAPP_RELEASE_STORE_FILE)
+                   storePassword MYAPP_RELEASE_STORE_PASSWORD
+                   keyAlias MYAPP_RELEASE_KEY_ALIAS
+                   keyPassword MYAPP_RELEASE_KEY_PASSWORD
+               }
+           }
+       }
+       
+       buildTypes {
+           release {
+               signingConfig signingConfigs.release
+               minifyEnabled true
+               // ... other release config
+           }
+       }
+   }
+   ```
+
+3. **Create `android/gradle.properties`**:
+   ```properties
+   MYAPP_RELEASE_STORE_FILE=my-release-key.keystore
+   MYAPP_RELEASE_STORE_PASSWORD=your_keystore_password
+   MYAPP_RELEASE_KEY_ALIAS=my-key-alias
+   MYAPP_RELEASE_KEY_PASSWORD=your_key_password
+   ```
+   ⚠️ **Add `android/gradle.properties` to `.gitignore`**
+
+4. **Update package.json scripts**:
+   ```json
+   {
+     "scripts": {
+       "android:prod": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease"
+     }
+   }
+   ```
+
+##### Option 2: Environment Variables (CI/CD Friendly)
+
+Use environment variables in `android/gradle.properties`:
+```properties
+MYAPP_RELEASE_STORE_FILE=my-release-key.keystore
+MYAPP_RELEASE_STORE_PASSWORD=${env.KEYSTORE_PASSWORD}
+MYAPP_RELEASE_KEY_ALIAS=${env.KEY_ALIAS}
+MYAPP_RELEASE_KEY_PASSWORD=${env.KEY_PASSWORD}
+```
+
+Build with:
+```bash
+export KEYSTORE_PASSWORD="your_password"
+export KEY_ALIAS="my-key-alias"
+export KEY_PASSWORD="your_key_password"
+npm run android:prod
+```
+
+##### Option 3: Android Studio GUI (Beginner Friendly)
+
+1. **Update script to open Android Studio**:
+   ```json
+   {
+     "scripts": {
+       "android:prod": "npm run build && npx cap sync android && npx cap open android"
+     }
+   }
+   ```
+
+2. **In Android Studio**:
+   - Build → Generate Signed Bundle/APK
+   - Follow wizard to create/use keystore
+   - Generate production APK/AAB
+
+##### Option 4: Debug Build for Testing
+
+For testing production code without signing:
+```json
+{
+  "scripts": {
+    "android:prod:debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug"
+  }
+}
+```
+
+#### Play Store Distribution
+
+For Play Store submission, create an Android App Bundle (AAB):
+```bash
+npm run build && npx cap sync android && cd android && ./gradlew bundleRelease
+```
+
+**Output locations:**
+- **AAB**: `android/app/build/outputs/bundle/release/`
+- **APK**: `android/app/build/outputs/apk/release/`
+
+#### Security Notes
+
+- **Never commit** keystore files or passwords to version control
+- Store keystore files securely (backup multiple copies)
+- Use environment variables or secure CI/CD secrets for credentials
+- Consider using Google Play App Signing for additional security
+
+#### References
+
+- [Capacitor Android Documentation](https://capacitorjs.com/docs/android)
+- [Android App Signing](https://developer.android.com/studio/publish/app-signing)
+- [Google Play App Signing](https://support.google.com/googleplay/android-developer/answer/9842756)
 
 ## 📊 Analytics & Monitoring
 

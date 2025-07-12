@@ -2,8 +2,6 @@
 
 # Custom additions to the default Ionic gitignore
 # Capacitor
-android/
-ios/
 .capacitor/
 
 # Mobile builds
@@ -25,9 +23,8 @@ ios/
 # misc
 .DS_Store
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
+*.local
 /.nx
 /.nx/cache
 /.vscode/*
@@ -40,3 +37,5 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache
+
+.vite

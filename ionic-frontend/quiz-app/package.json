@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:dev": "tsc && vite build --mode development",
+    "android:dev": "npm run build:dev && npx cap sync android && npx cap run android",
+    "android:prod": "npm run build && npx cap sync android && echo 'Production build setup pending - use android:dev for now'"
   },
   "dependencies": {
     "@capacitor/android": "7.4.1",
@@ -18,8 +21,8 @@
     "@capacitor/haptics": "7.0.1",
     "@capacitor/keyboard": "7.0.1",
     "@capacitor/status-bar": "^7.0.1",
-    "@ionic/react": "^8.5.0",
-    "@ionic/react-router": "^8.5.0",
+    "@ionic/react": "^8.6.4",
+    "@ionic/react-router": "^8.6.4",
     "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.3.3",
     "ionicons": "^7.4.0",
