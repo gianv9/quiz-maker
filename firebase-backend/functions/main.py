@@ -2,10 +2,17 @@
 # To get started, simply uncomment the below code or create your own.
 # Deploy with `firebase deploy`
 
+# IMPORTANT: Firebase Functions add the function name to the URL path
+# Since our function is named 'api', all routes will be under /api/
+# Example: https://region-project.cloudfunctions.net/api/topics
+# This matches the Flask API structure where routes are /api/topics, /api/stats, etc.
+
 from firebase_functions import https_fn
 from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app, firestore
+from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 set_global_options(max_instances=10)
 
@@ -14,8 +21,9 @@ initialize_app()
 db = firestore.client()
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-@app.route('/', methods=['GET'])
+@app.route('/topics', methods=['GET'])
 def get_topics():
     """Get all available topics"""
     try:
@@ -24,9 +32,9 @@ def get_topics():
         topics = set()
         for doc in docs:
             data = doc.to_dict()
-            if 'topic' in data:
+            if data and 'topic' in data:
                 topics.add(data['topic'])
-        return jsonify(list(topics))
+        return jsonify(list(sorted(topics)))  # Sort for consistency
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -35,24 +43,47 @@ def get_questions(topic, difficulty):
     """Get questions for specific topic and difficulty"""
     try:
         count = request.args.get('count', '10')
-        limit = min(int(count), 50) if count.isdigit() else 10
+        
+        # Match Flask behavior for limits
+        if count == 'all':
+            limit = 50  # Maximum questions per quiz
+        else:
+            limit = min(int(count), 50) if count.isdigit() else 10
 
         questions_ref = db.collection('questions')
+        
+        # Build query
         if topic == 'mixed':
-            query = questions_ref.where('difficulty', '==', difficulty).limit(limit)
+            # For mixed, get random questions from all topics
+            query = questions_ref.where('difficulty', '==', difficulty)
         else:
-            query = questions_ref.where('topic', '==', topic).where('difficulty', '==', difficulty).limit(limit)
-
-        docs = query.stream()
+            query = questions_ref.where('topic', '==', topic).where('difficulty', '==', difficulty)
+        
+        # Get all matching docs then randomly select
+        all_docs = list(query.stream())
+        
+        # Randomly sample if we have more than needed
+        import random
+        if len(all_docs) > limit:
+            selected_docs = random.sample(all_docs, limit)
+        else:
+            selected_docs = all_docs
+            
         questions = []
         
-        for doc in docs:
+        for doc in selected_docs:
             data = doc.to_dict()
+            
+            # Skip if document data is None (shouldn't happen, but satisfies linter)
+            if data is None:
+                continue
+            
+            # Format to match Flask response structure exactly
             questions.append({
-                'id': doc.id,
+                'id': doc.id,  # Use Firestore document ID
                 'question': data.get('question_text', ''),
                 'question_type': data.get('question_type', 'single-choice'),
-                'answers': data.get('options', []),
+                'answers': data.get('options', ['', '', '', '']),
                 'correct_answers': data.get('correct_answers', []),
                 'explanation': data.get('explanation', ''),
                 'references': data.get('study_references', [])
@@ -63,7 +94,7 @@ def get_questions(topic, difficulty):
         return jsonify({'error': str(e)}), 500
 
 def calculate_score(question_type, correct_answers, user_answers, difficulty):
-    """Calculate score with penalty for wrong selections"""
+    """Calculate score with penalty for wrong selections - matches Flask logic"""
     base_points = {'easy': 10, 'medium': 20, 'hard': 30}[difficulty]
     
     if question_type == 'single-choice':
@@ -96,7 +127,8 @@ def submit_score():
     try:
         data = request.json
         
-        if 'detailed_results' in data:
+        # Calculate detailed scoring if provided - matches Flask behavior
+        if data is not None and 'detailed_results' in data:
             total_score = 0
             correct_count = 0
             
@@ -109,57 +141,84 @@ def submit_score():
                 )
                 total_score += question_score
                 
+                # Count as correct if full points achieved
                 base_points = {'easy': 10, 'medium': 20, 'hard': 30}[data['difficulty']]
                 if question_score == base_points:
                     correct_count += 1
             
+            # Override with calculated values
             data['score'] = total_score
             data['correct'] = correct_count
 
-        db.collection('scores').add({
-            'topic': data['topic'],
-            'difficulty': data['difficulty'],
-            'score': data['score'],
-            'correct_answers': data['correct'],
-            'total_questions': data['total'],
-            'created_at': firestore.SERVER_TIMESTAMP
-        })
-        return jsonify({'status': 'success'})
+        # Store in Firestore
+        if data is not None:
+            db.collection('scores').add({
+                'topic': data.get('topic', ''),
+                'difficulty': data.get('difficulty', ''),
+                'score': data.get('score', 0),
+                'correct_answers': data.get('correct', 0),
+                'total_questions': data.get('total_questions', 10), 
+                'created_at': SERVER_TIMESTAMP
+            })
+            return jsonify({'status': 'success'})
+        else:
+            return jsonify({'error': 'No data provided'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/results', methods=['GET'])
-def results():
+@app.route('/stats', methods=['GET'])
+def get_stats():
     """Get quiz statistics"""
     try:
         scores_ref = db.collection('scores')
         docs = scores_ref.stream()
-        scores = [doc.to_dict() for doc in docs]
-
-        stats = {}
-        for score in scores:
-            key = (score['topic'], score['difficulty'])
-            if key not in stats:
-                stats[key] = {'total_score': 0, 'total_correct': 0, 'total_questions': 0, 'attempts': 0}
+        
+        # Aggregate statistics
+        stats_dict = {}
+        for doc in docs:
+            score = doc.to_dict()
             
-            stats[key]['total_score'] += score['score']
-            stats[key]['total_correct'] += score['correct_answers']
-            stats[key]['total_questions'] += score['total_questions']
-            stats[key]['attempts'] += 1
+            # Skip if document data is None
+            if score is None:
+                continue
+            
+            # Skip invalid records
+            if score.get('total_questions', 0) == 0:
+                continue
+                
+            key = (score['topic'], score['difficulty'])
+            
+            if key not in stats_dict:
+                stats_dict[key] = {
+                    'total_score': 0,
+                    'total_correct': 0,
+                    'total_questions': 0,
+                    'attempts': 0
+                }
+            
+            stats_dict[key]['total_score'] += score.get('score', 0)
+            stats_dict[key]['total_correct'] += score.get('correct_answers', 0)
+            stats_dict[key]['total_questions'] += score.get('total_questions', 0)
+            stats_dict[key]['attempts'] += 1
 
+        # Format response to match Flask
         formatted_stats = []
-        for key, data in stats.items():
-            topic, difficulty = key
-            avg_score = data['total_score'] / data['attempts']
-            avg_percentage = (data['total_correct'] / data['total_questions']) if data['total_questions'] > 0 else 0
-            formatted_stats.append({
-                'topic': topic,
-                'difficulty': difficulty,
-                'avg_score': avg_score,
-                'avg_percentage': avg_percentage,
-                'attempts': data['attempts']
-            })
-
+        for (topic, difficulty), data in stats_dict.items():
+            if data['attempts'] > 0:
+                avg_score = data['total_score'] / data['attempts']
+                avg_percentage = data['total_correct'] / data['total_questions'] if data['total_questions'] > 0 else 0
+                
+                formatted_stats.append({
+                    'topic': topic,
+                    'difficulty': difficulty,
+                    'avg_score': float(avg_score),
+                    'avg_percentage': float(avg_percentage),
+                    'attempts': int(data['attempts'])
+                })
+        
+        # Sort by topic and difficulty for consistency
+        formatted_stats.sort(key=lambda x: (x['topic'], x['difficulty']))
+        
         return jsonify(formatted_stats)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
