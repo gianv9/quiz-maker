@@ -180,7 +180,7 @@ jobs:
     name: 🚀 Deploy to Production
     runs-on: ubuntu-latest
     needs: [test-firebase-functions]  # Only depend on Firebase Functions tests for now
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/ci-cd-pipeline')
 
     steps:
     - name: 📥 Checkout code
