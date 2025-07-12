@@ -1,0 +1,207 @@
+name: Quiz Maker CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Job 1: Firebase Functions Tests
+  test-firebase-functions:
+    name: 🔥 Firebase Functions Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.11, 3.12]
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: 📦 Install dependencies
+      run: |
+        cd firebase-backend/functions
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 🧪 Run unit tests with coverage
+      run: |
+        cd firebase-backend/functions
+        python -m pytest tests/ -v --cov=app --cov=main --cov-report=xml --cov-fail-under=80
+      env:
+        TESTING: true
+    
+    - name: 📊 Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./firebase-backend/functions/coverage.xml
+        flags: firebase-functions
+        name: firebase-functions-coverage
+
+  # Job 2: Flask Backend Tests  
+#   test-flask-backend:
+#     name: 🐍 Flask Backend Tests
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         python-version: [3.9, 3.11, 3.12]
+
+#     steps:
+#     - name: 📥 Checkout code
+#       uses: actions/checkout@v4
+    
+#     - name: 🐍 Set up Python ${{ matrix.python-version }}
+#       uses: actions/setup-python@v4
+#       with:
+#         python-version: ${{ matrix.python-version }}
+    
+#     - name: 📦 Install dependencies
+#       run: |
+#         cd flask-backend
+#         python -m pip install --upgrade pip
+#         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+#         # Add any Flask testing dependencies
+    
+#     - name: 🧪 Run Flask tests
+#       run: |
+#         cd flask-backend
+#         # Add your Flask test commands here
+#         # python -m pytest tests/ -v
+#         echo "Flask backend tests would run here"
+
+  # Job 3: Ionic Frontend Tests
+#   test-ionic-frontend:
+#     name: ⚡ Ionic Frontend Tests
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: 📥 Checkout code
+#       uses: actions/checkout@v4
+    
+#     - name: 📱 Set up Node.js
+#       uses: actions/setup-node@v4
+#       with:
+#         node-version: '18'
+#         cache: 'npm'
+#         cache-dependency-path: ionic-frontend/package-lock.json
+    
+#     - name: 📦 Install dependencies
+#       run: |
+#         cd ionic-frontend
+#         npm ci
+    
+#     - name: 🧪 Run Ionic tests
+#       run: |
+#         cd ionic-frontend
+#         npm test -- --watch=false --browsers=ChromeHeadless
+    
+#     - name: 🔨 Build Ionic app
+#       run: |
+#         cd ionic-frontend
+#         npm run build
+
+  # Job 4: Firebase Functions E2E Tests (with emulator)
+  test-firebase-e2e:
+    name: 🎯 Firebase E2E Tests
+    runs-on: ubuntu-latest
+    needs: test-firebase-functions  # Run after unit tests pass
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: 📱 Set up Node.js (for Firebase CLI)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: 📦 Install Python dependencies
+      run: |
+        cd firebase-backend/functions
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 🔥 Install Firebase CLI
+      run: npm install -g firebase-tools
+    
+    - name: ☕ Install Java (for Firestore emulator)
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+    
+    - name: 🎯 Run E2E tests with emulator
+      run: |
+        cd firebase-backend/functions
+        # Set environment for CI
+        export CI=true
+        export GOOGLE_CLOUD_PROJECT=quiz-maker-test
+        
+        # Run e2e tests (handles emulator automatically)
+        python run_tests.py --e2e
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+  # Job 5: Integration Tests (Optional)
+#   test-integration:
+#     name: 🔗 Integration Tests
+#     runs-on: ubuntu-latest
+#     needs: [test-firebase-functions, test-flask-backend, test-ionic-frontend]
+#     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+#     steps:
+#     - name: 📥 Checkout code
+#       uses: actions/checkout@v4
+    
+#     - name: 🧪 Run integration tests
+#       run: |
+#         # Add any cross-service integration tests here
+#         echo "Integration tests would run here"
+#         echo "Could test: Ionic -> Firebase Functions -> Database"
+
+  # Job 6: Deploy (only on main branch)
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test-firebase-functions, test-flask-backend, test-ionic-frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 📱 Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: 🔥 Install Firebase CLI
+      run: npm install -g firebase-tools
+    
+    - name: 🚀 Deploy Firebase Functions
+      run: |
+        cd firebase-backend
+        firebase deploy --only functions --token ${{ secrets.FIREBASE_TOKEN }}
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+    
+    - name: 📱 Deploy Ionic (if using Firebase Hosting)
+      run: |
+        cd ionic-frontend
+        npm ci
+        npm run build
+        cd ../firebase-backend
+        firebase deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
