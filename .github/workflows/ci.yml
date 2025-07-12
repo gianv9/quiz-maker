@@ -209,7 +209,9 @@ jobs:
     
     - name: 🚀 Deploy Firebase Functions
       run: |
-        cd firebase-backend
+        cd firebase-backend/functions
+        source venv/bin/activate  # Activate the venv in this step
+        cd ..  # Go back to firebase-backend directory
         echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > service-account-key.json
         export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/service-account-key.json"
         firebase deploy --only functions
