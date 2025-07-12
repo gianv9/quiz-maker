@@ -14,17 +14,18 @@ vi.mock('@ionic/react', async () => {
   };
 });
 
-// Mock the apiService
-const mockApiService = {
-  getTopics: vi.fn(),
-  testConnection: vi.fn(),
-  getQuestions: vi.fn(),
-  getConfig: vi.fn().mockReturnValue({ baseUrl: 'http://localhost:5000' }),
-};
-
+// Mock the apiService - move the object definition inline
 vi.mock('../services/api', () => ({
-  apiService: mockApiService,
+  apiService: {
+    getTopics: vi.fn(),
+    testConnection: vi.fn(),
+    getQuestions: vi.fn(),
+    getConfig: vi.fn().mockReturnValue({ baseUrl: 'http://localhost:5000' }),
+  },
 }));
+
+// Import the mocked service after the mock is defined
+import { apiService } from '../services/api';
 
 // Mock the useHistory hook
 const mockHistoryPush = vi.fn();
@@ -42,10 +43,8 @@ describe('Home Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Set up default resolved topics
-    mockApiService.getTopics.mockResolvedValue(['aws-services', 'aws-security']);
+    (apiService.getTopics as any).mockResolvedValue(['aws-services', 'aws-security']);
   });
-
-  // ... rest of your tests using mockApiService
 
   it('should render the main title', async () => {
     await act(async () => {
@@ -101,7 +100,7 @@ describe('Home Page', () => {
 
   it('should fetch and display topics on load', async () => {
     const mockTopics = ['aws-services', 'aws-security'];
-    mockApiService.getTopics.mockResolvedValue(mockTopics);
+    (apiService.getTopics as any).mockResolvedValue(mockTopics);
 
     await act(async () => {
       render(
@@ -122,7 +121,7 @@ describe('Home Page', () => {
   });
 
   it('should display default topics if API fails', async () => {
-    mockApiService.getTopics.mockRejectedValue(new Error('API Error'));
+    (apiService.getTopics as any).mockRejectedValue(new Error('API Error'));
 
     await act(async () => {
       render(
@@ -145,7 +144,7 @@ describe('Home Page', () => {
 
   it('should navigate to the game page when a topic is clicked', async () => {
     const mockTopics = ['aws-storage'];
-    mockApiService.getTopics.mockResolvedValue(mockTopics);
+    (apiService.getTopics as any).mockResolvedValue(mockTopics);
 
     await act(async () => {
       render(

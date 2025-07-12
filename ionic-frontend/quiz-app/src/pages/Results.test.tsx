@@ -20,14 +20,15 @@ vi.mock('@ionic/react', async () => {
   };
 });
 
-// Mock the apiService
-const mockApiService = {
-  getStats: vi.fn(),
-};
-
+// Mock the apiService - move the object definition inline
 vi.mock('../services/api', () => ({
-  apiService: mockApiService,
+  apiService: {
+    getStats: vi.fn(),
+  },
 }));
+
+// Import the mocked service after the mock is defined
+import { apiService } from '../services/api';
 
 // Mock the useHistory hook
 const mockHistoryPush = vi.fn();
@@ -45,10 +46,8 @@ describe('Results Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock for successful stats load
-    mockApiService.getStats.mockResolvedValue(mockStats);
+    (apiService.getStats as any).mockResolvedValue(mockStats);
   });
-
-  // ... rest of your tests using mockApiService
 
   const renderResults = () => {
     return render(
@@ -65,7 +64,7 @@ describe('Results Page', () => {
       resolvePromise = resolve;
     });
     
-    mockApiService.getStats.mockReturnValue(controllablePromise);
+    (apiService.getStats as any).mockReturnValue(controllablePromise);
     
     renderResults();
     
@@ -104,7 +103,7 @@ describe('Results Page', () => {
   });
 
   it('should display "No Statistics Yet!" if no stats are available', async () => {
-    mockApiService.getStats.mockResolvedValue([]); // Mock empty stats
+    (apiService.getStats as any).mockResolvedValue([]); // Mock empty stats
     
     await act(async () => {
       renderResults();
@@ -122,7 +121,7 @@ describe('Results Page', () => {
   });
 
   it('should display an error toast if statistics fail to load', async () => {
-    mockApiService.getStats.mockRejectedValue(new Error('API Error'));
+    (apiService.getStats as any).mockRejectedValue(new Error('API Error'));
     
     await act(async () => {
       renderResults();
@@ -164,8 +163,8 @@ describe('Results Page', () => {
       expect(screen.queryByText('Loading statistics...')).not.toBeInTheDocument();
     });
 
-    mockApiService.getStats.mockClear(); // Clear previous call
-    mockApiService.getStats.mockResolvedValueOnce(mockStats); // Mock for the refresh call
+    (apiService.getStats as any).mockClear(); // Clear previous call
+    (apiService.getStats as any).mockResolvedValueOnce(mockStats); // Mock for the refresh call
 
     // Use text-based selector
     const refreshButton = screen.getByTestId('refresh-stats-button');
@@ -175,7 +174,7 @@ describe('Results Page', () => {
     });
 
     await waitFor(() => {
-      expect(mockApiService.getStats).toHaveBeenCalledTimes(1);
+      expect(apiService.getStats).toHaveBeenCalledTimes(1);
     });
   });
 });

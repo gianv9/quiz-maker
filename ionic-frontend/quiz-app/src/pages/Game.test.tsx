@@ -15,20 +15,21 @@ vi.mock('@ionic/react', async () => {
   };
 });
 
-// Mock the apiService
-const mockApiService = {
-  getQuestions: vi.fn(),
-  submitScore: vi.fn(),
-  calculateQuestionScore: vi.fn((question_type: string, correct_answers: number[], user_answers: number[], difficulty: string) => {
-      const basePoints: Record<string, number> = { easy: 10, medium: 20, hard: 30 };
-      const correctUserAnswers = user_answers.filter((a: number) => correct_answers.includes(a));
-      return correctUserAnswers.length > 0 ? basePoints[difficulty] || 10 : 0;
-  }),
-};
-
+// Mock the apiService - move the object definition inline
 vi.mock('../services/api', () => ({
-  apiService: mockApiService,
+  apiService: {
+    getQuestions: vi.fn(),
+    submitScore: vi.fn(),
+    calculateQuestionScore: vi.fn((question_type: string, correct_answers: number[], user_answers: number[], difficulty: string) => {
+        const basePoints: Record<string, number> = { easy: 10, medium: 20, hard: 30 };
+        const correctUserAnswers = user_answers.filter((a: number) => correct_answers.includes(a));
+        return correctUserAnswers.length > 0 ? basePoints[difficulty] || 10 : 0;
+    }),
+  },
 }));
+
+// Import the mocked service after the mock is defined
+import { apiService } from '../services/api';
 
 // Mock the router hooks
 const mockHistoryPush = vi.fn();
@@ -50,8 +51,8 @@ describe('Game Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Mock successful API calls by default
-    mockApiService.getQuestions.mockResolvedValue(mockQuestions);
-    mockApiService.submitScore.mockResolvedValue({ success: true });
+    (apiService.getQuestions as any).mockResolvedValue(mockQuestions);
+    (apiService.submitScore as any).mockResolvedValue({ success: true });
   });
 
   const renderGame = () => {
@@ -72,7 +73,7 @@ describe('Game Page', () => {
     });
     
     // Mock getQuestions to return our controllable promise
-    mockApiService.getQuestions.mockReturnValue(controllablePromise);
+    (apiService.getQuestions as any).mockReturnValue(controllablePromise);
     
     // Render the component
     renderGame();
@@ -104,7 +105,7 @@ describe('Game Page', () => {
   });
 
   it('should display an error if questions fail to load', async () => {
-    mockApiService.getQuestions.mockRejectedValue(new Error('API Error'));
+    (apiService.getQuestions as any).mockRejectedValue(new Error('API Error'));
     
     await act(async () => {
       renderGame();
@@ -283,7 +284,7 @@ describe('Game Page', () => {
     });
 
     // Expect submitScore to have been called and navigation to occur
-    expect(mockApiService.submitScore).toHaveBeenCalledTimes(1);
+    expect(apiService.submitScore).toHaveBeenCalledTimes(1);
     expect(mockHistoryPush).toHaveBeenCalledWith('/results');
   });
 });
