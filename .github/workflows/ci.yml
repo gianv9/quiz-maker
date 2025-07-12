@@ -2,7 +2,7 @@ name: Quiz Maker CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, 'feature/*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:  # 👈 Allows manual triggering
