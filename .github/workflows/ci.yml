@@ -10,7 +10,7 @@ on:
 jobs:
   # Job 1: Firebase Functions Tests
   test-firebase-functions:
-    name: 🔥 Firebase Functions Tests
+    name: 🔥 Firebase Functions Tests (Unit Tests)
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -111,7 +111,7 @@ jobs:
 
   # Job 4: Firebase Functions E2E Tests (with emulator)
   test-firebase-e2e:
-    name: 🎯 Firebase E2E Tests
+    name: 🎯 Firebase E2E Tests (E2E Tests With 🔥 Emulator)
     runs-on: ubuntu-latest
     needs: test-firebase-functions  # Run after unit tests pass
     if: false  # Disable E2E tests for now due to emulator complexity in CI
@@ -174,7 +174,7 @@ jobs:
 #         echo "Integration tests would run here"
 #         echo "Could test: Ionic -> Firebase Functions -> Database"
 
-  # Job 6: Deploy (only on main branch)
+  # Job 6: Deploy (only on main & ci-cd-pipeline branches)
   # Here we could deploy the ionic webapp to firebase hosting or any other service
   deploy:
     name: 🚀 Deploy to Production
@@ -191,18 +191,27 @@ jobs:
       with:
         python-version: '3.11'
     
+    - name: 📱 Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
     - name: 🔥 Install Firebase CLI
       run: npm install -g firebase-tools
-
-    - name: 📦 Install Python dependencies
+    
+    - name: 🐍 Setup Python environment for Functions
       run: |
         cd firebase-backend/functions
-        python -m pip install --upgrade pip
+        python -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
         pip install -r requirements.txt
     
     - name: 🚀 Deploy Firebase Functions
       run: |
         cd firebase-backend
-        firebase deploy --only functions --token ${{ secrets.FIREBASE_TOKEN }}
+        echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > service-account-key.json
+        export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/service-account-key.json"
+        firebase deploy --only functions
       env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        GOOGLE_APPLICATION_CREDENTIALS: service-account-key.json
