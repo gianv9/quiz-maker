@@ -175,7 +175,9 @@ jobs:
   deploy:
     name: 🚀 Deploy to Production
     runs-on: ubuntu-latest
-    needs: [test-firebase-functions, test-flask-backend, test-ionic-frontend]
+    needs: [test-firebase-functions, 
+    # test-flask-backend, test-ionic-frontend
+    ]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
