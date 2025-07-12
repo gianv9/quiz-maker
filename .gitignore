@@ -1,0 +1,17 @@
+# OS & IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment & secrets
+.env*
+*.log
+logs/
+
+# Docker volumes (if at root level)
+postgres_data/
+metabase_data/
+metabase_postgres_data/
