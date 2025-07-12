@@ -359,31 +359,81 @@ const Game: React.FC = () => {
           <IonCardContent>
             <h2 className="question-text">{currentQuestion.question}</h2>
             
-            <IonList className="answers-list">
-              {currentQuestion.answers.map((answer, index) => (
-                <IonItem
+            <div className="answers-list">
+            {isMultipleChoice ? (
+              // Multiple choice - keep existing structure
+              currentQuestion.answers.map((answer, index) => (
+                <div
                   key={index}
-                  button
-                  className={`answer-item ${getAnswerStatus(index)}`}
+                  className={`custom-answer-item ${getAnswerStatus(index)}`}
                   onClick={() => handleAnswerChange(index)}
-                  disabled={showFeedback}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '16px',
+                    margin: '8px 0',
+                    backgroundColor: 'rgba(248, 249, 250, 0.8)',
+                    borderRadius: '8px',
+                    border: '2px solid transparent',
+                    cursor: showFeedback ? 'default' : 'pointer'
+                  }}
                 >
-                  {isMultipleChoice ? (
-                    <IonCheckbox
-                      checked={selectedAnswers.includes(index)}
-                      onIonChange={() => handleAnswerChange(index)}
-                      disabled={showFeedback}
-                    />
-                  ) : (
-                    <IonRadio
-                    value={index}
+                  <IonCheckbox
+                    checked={selectedAnswers.includes(index)}
+                    onIonChange={() => handleAnswerChange(index)}
                     disabled={showFeedback}
+                    style={{ marginRight: '16px', flexShrink: 0 }}
+                  />
+                  <div style={{ 
+                    flex: 1, 
+                    textAlign: 'center',
+                    fontSize: '1rem',
+                    fontWeight: '500'
+                  }}>
+                    {answer}
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Single choice - wrap in radio group
+              <IonRadioGroup 
+                value={selectedAnswers[0] !== undefined ? selectedAnswers[0] : null}
+                onIonChange={(e) => handleAnswerChange(e.detail.value)}
+              >
+                {currentQuestion.answers.map((answer, index) => (
+                  <div
+                    key={index}
+                    className={`custom-answer-item ${getAnswerStatus(index)}`}
+                    onClick={() => handleAnswerChange(index)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '16px',
+                      margin: '8px 0',
+                      backgroundColor: 'rgba(248, 249, 250, 0.8)',
+                      borderRadius: '8px',
+                      border: '2px solid transparent',
+                      cursor: showFeedback ? 'default' : 'pointer'
+                    }}
+                  >
+                    <IonRadio
+                      value={index}
+                      disabled={showFeedback}
+                      style={{ marginRight: '16px', flexShrink: 0 }}
                     />
-                  )}
-                  <IonLabel className="answer-text">{answer}</IonLabel>
-                </IonItem>
-              ))}
-            </IonList>
+                    <div style={{ 
+                      flex: 1, 
+                      textAlign: 'center',
+                      fontSize: '1rem',
+                      fontWeight: '500'
+                    }}>
+                      {answer}
+                    </div>
+                  </div>
+                ))}
+              </IonRadioGroup>
+            )}
+            </div>
           </IonCardContent>
         </IonCard>
 
