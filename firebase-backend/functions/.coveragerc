@@ -1,0 +1,20 @@
+[run]
+source = app, main
+omit = 
+    */tests/*
+    */venv/*
+    */__pycache__/*
+    */htmlcov/*
+    .coverage
+branch = True
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    raise AssertionError
+    
+[html]
+directory = htmlcov

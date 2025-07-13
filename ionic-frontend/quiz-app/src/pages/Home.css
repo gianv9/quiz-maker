@@ -1,0 +1,96 @@
+/* src/pages/Home.css */
+
+.home-content {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.header-section {
+  text-align: center;
+  padding: 20px;
+  color: white;
+}
+
+.header-section h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.header-section p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.settings-card {
+  margin: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.topic-card {
+  margin: 8px;
+  border-radius: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  min-height: 120px;
+}
+
+.topic-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.topic-card ion-card-content {
+  text-align: center;
+  padding: 20px;
+}
+
+.topic-icon {
+  font-size: 2.5rem;
+  color: var(--ion-color-primary);
+  margin-bottom: 12px;
+}
+
+.mixed-review .topic-icon {
+  color: var(--ion-color-warning);
+}
+
+.topic-card h3 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--ion-color-dark);
+}
+
+.topic-card p {
+  font-size: 0.9rem;
+  color: var(--ion-color-medium);
+  margin: 0;
+}
+
+.quick-actions {
+  padding: 20px 16px;
+  padding-bottom: 40px;
+}
+
+.start-button {
+  margin-bottom: 12px;
+  font-weight: bold;
+  --border-radius: 25px;
+}
+
+.quick-actions ion-button {
+  --border-radius: 25px;
+  margin-bottom: 8px;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .topic-card h3 {
+    color: var(--ion-color-light);
+  }
+  
+  .header-section {
+    color: var(--ion-color-light);
+  }
+}
