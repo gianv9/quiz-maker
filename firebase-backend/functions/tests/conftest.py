@@ -67,8 +67,8 @@ def app():
     # Create app in testing mode with mocked service
     flask_app = create_app(testing=True, quiz_service=mock_quiz_service)
     
-    # Store the mock service in app context for test access
-    flask_app.mock_quiz_service = mock_quiz_service
+    # Store the mock service in app config for test access
+    flask_app.config['mock_quiz_service'] = mock_quiz_service
     
     with flask_app.app_context():
         yield flask_app

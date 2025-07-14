@@ -224,6 +224,4 @@ jobs:
 
       env:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-
-      env:
         GOOGLE_APPLICATION_CREDENTIALS: service-account-key.json
