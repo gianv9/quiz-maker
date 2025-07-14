@@ -1,5 +1,4 @@
 {
-  "extends": "@ionic/react/tsconfig",
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
