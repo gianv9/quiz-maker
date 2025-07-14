@@ -219,6 +219,7 @@ jobs:
     - name: 🌐 Deploy to Firebase Hosting 
       run: |
         cd ionic-frontend/quiz-app
+        npm ci
         npm run build
         firebase deploy --only hosting
 
