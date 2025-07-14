@@ -17,7 +17,7 @@ def register_routes(app, quiz_service=None):
         from app.services import QuizService
         return QuizService()
     
-    @app.route('/', methods=['GET'])
+    @app.route('/topics', methods=['GET'])
     def get_topics():
         """Get all available topics."""
         try:
