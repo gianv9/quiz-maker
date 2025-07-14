@@ -6,7 +6,7 @@ from app import create_app
 
 set_global_options(max_instances=10)
 
-# Create the Flask app using the application factory (no quiz_service = use real one)
+# Create the Flask app using the application factory
 app = create_app()
 
 @https_fn.on_request()

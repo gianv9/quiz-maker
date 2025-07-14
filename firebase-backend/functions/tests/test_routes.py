@@ -1,7 +1,7 @@
 """Tests for API routes/endpoints."""
 
-import pytest
 import json
+from __version__ import __version__
 
 
 class TestQuizRoutes:
@@ -166,3 +166,15 @@ class TestQuizRoutes:
         assert response1.status_code == 200
         assert response2.status_code == 200
         assert response1.get_json() == response2.get_json()
+
+    def test_version_endpoint(self, client, app):
+        """Test the version endpoint returns correct data."""
+        with app.test_client() as client:
+            response = client.get('/version')
+            
+            assert response.status_code == 200
+            data = response.get_json()
+            assert 'version' in data
+            assert 'service' in data
+            assert data['version'] == __version__
+            assert data['service'] == 'firebase-backend'

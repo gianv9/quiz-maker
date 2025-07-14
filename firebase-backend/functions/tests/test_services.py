@@ -1,6 +1,6 @@
 """Tests for QuizService business logic."""
 
-import pytest
+# import pytest
 from unittest.mock import MagicMock
 from app.services import QuizService
 

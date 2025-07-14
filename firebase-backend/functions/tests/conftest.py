@@ -2,7 +2,7 @@ import pytest
 import os
 from unittest.mock import patch, MagicMock
 import firebase_admin
-from firebase_admin import credentials, firestore
+# from firebase_admin import credentials, firestore
 
 # Set testing environment variables
 os.environ['FLASK_ENV'] = 'testing'
