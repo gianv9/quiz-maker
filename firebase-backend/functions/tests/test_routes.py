@@ -13,7 +13,7 @@ class TestQuizRoutes:
         app.mock_quiz_service.get_all_topics.return_value = ['python', 'javascript']
         
         # Make the API call
-        response = client.get('/')
+        response = client.get('/topics')
         
         # Check the response
         assert response.status_code == 200
@@ -127,7 +127,7 @@ class TestQuizRoutes:
         app.mock_quiz_service.get_all_topics.side_effect = Exception("Database error")
         
         # Make the API call
-        response = client.get('/')
+        response = client.get('/topics')
         
         # Should return 500 error
         assert response.status_code == 500

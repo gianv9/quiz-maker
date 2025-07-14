@@ -35,7 +35,7 @@ def test_fixtures_available(app, client, mock_firestore):
 def test_flask_app_responds(client):
     """Test that Flask app can handle basic requests with mocked services."""
     # Test the root endpoint that returns topics
-    response = client.get('/')
+    response = client.get('/topics')
     
     # Should get a successful response with empty topics list
     assert response.status_code == 200
