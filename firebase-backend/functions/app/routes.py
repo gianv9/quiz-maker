@@ -1,8 +1,9 @@
 """Route handlers for the quiz application."""
 
 from flask import jsonify, request
-from firebase_admin import firestore
-from app.services import QuizService
+# from firebase_admin import firestore
+from __version__ import __version__
+# from app.services import QuizService
 
 
 def register_routes(app, quiz_service=None):
@@ -16,7 +17,7 @@ def register_routes(app, quiz_service=None):
         from app.services import QuizService
         return QuizService()
     
-    @app.route('/', methods=['GET'])
+    @app.route('/topics', methods=['GET'])
     def get_topics():
         """Get all available topics."""
         try:
@@ -61,3 +62,7 @@ def register_routes(app, quiz_service=None):
             return jsonify(stats)
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+    @app.route('/version')
+    def get_version():
+        return {"version": __version__, "service": "firebase-backend"}

@@ -1,14 +1,20 @@
 """Application factory for Flask quiz app."""
 
 from flask import Flask
+from flask_cors import CORS
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials
 import os
+from __version__ import __version__
 
 
 def create_app(testing=False, quiz_service=None):
     """Create and configure Flask application."""
     app = Flask(__name__)
+    CORS(app, origins=["https://quiz-maker-12470.web.app", "https://us-central1-quiz-maker-12470.cloudfunctions.net", "http://localhost:8100"])
+
+    import logging
+    logging.info(f"Firebase Functions backend starting - version {__version__}")
     
     # Configure app
     if testing:

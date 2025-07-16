@@ -1,7 +1,7 @@
 {
   "name": "quiz-app",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,7 @@
     "build:dev": "tsc && vite build --mode development",
     "android:dev": "npm run build:dev && npx cap sync android && npx cap run android",
     "android:release-debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
-    "android:prod": "npm run build && npx cap sync android && echo 'Production build setup pending - use android:dev for now'"
+    "android:prod": "npm run build && npx cap sync android && echo 'Production build setup pending - use android:release-debug for signed testing'"
   },
   "dependencies": {
     "@capacitor/android": "7.4.1",

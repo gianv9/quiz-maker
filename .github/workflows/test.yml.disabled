@@ -1,0 +1,12 @@
+# .github/workflows/test.yml
+name: Test Workflow
+on: 
+  push:
+    branches: [ feature/ci-cd-pipeline ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Hello World
+      run: echo "Hello from GitHub Actions!"
