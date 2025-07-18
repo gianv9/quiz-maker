@@ -7,7 +7,7 @@ import Home from './Home';
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual('@ionic/react');
   return {
-    ...(actual as any),
+    ...(actual as Record<string, unknown>),
     IonLoading: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Loading topics...</div> : null),
     IonToast: ({ isOpen, message }: { isOpen: boolean; message: string }) => (isOpen ? <div>{message}</div> : null),
     IonAlert: ({ isOpen, header, message }: { isOpen: boolean; header: string; message: string }) => (isOpen ? <div>{header}{message}</div> : null),
@@ -32,7 +32,7 @@ const mockHistoryPush = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
-    ...(actual as any),
+    ...(actual as Record<string, unknown>),
     useHistory: () => ({
       push: mockHistoryPush,
     }),
@@ -43,7 +43,7 @@ describe('Home Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Set up default resolved topics
-    (apiService.getTopics as any).mockResolvedValue(['aws-services', 'aws-security']);
+    (apiService.getTopics as vi.Mock).mockResolvedValue(['aws-services', 'aws-security']);
   });
 
   it('should render the main title', async () => {
@@ -100,7 +100,7 @@ describe('Home Page', () => {
 
   it('should fetch and display topics on load', async () => {
     const mockTopics = ['aws-services', 'aws-security'];
-    (apiService.getTopics as any).mockResolvedValue(mockTopics);
+    (apiService.getTopics as vi.Mock).mockResolvedValue(mockTopics);
 
     await act(async () => {
       render(
@@ -121,7 +121,7 @@ describe('Home Page', () => {
   });
 
   it('should display default topics if API fails', async () => {
-    (apiService.getTopics as any).mockRejectedValue(new Error('API Error'));
+    (apiService.getTopics as vi.Mock).mockRejectedValue(new Error('API Error'));
 
     await act(async () => {
       render(
@@ -136,7 +136,7 @@ describe('Home Page', () => {
     });
 
     // Check for the toast message
-    expect(await screen.findByText('Failed to load topics. Using default topics.')).toBeInTheDocument();
+    expect(await screen.findByText(/Failed to load topics/)).toBeInTheDocument();
     
     // Check for a default topic
     expect(await screen.findByRole('heading', { name: /AWS Shared Responsibility/i })).toBeInTheDocument();
@@ -144,7 +144,7 @@ describe('Home Page', () => {
 
   it('should navigate to the game page when a topic is clicked', async () => {
     const mockTopics = ['aws-storage'];
-    (apiService.getTopics as any).mockResolvedValue(mockTopics);
+    (apiService.getTopics as vi.Mock).mockResolvedValue(mockTopics);
 
     await act(async () => {
       render(

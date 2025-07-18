@@ -59,7 +59,7 @@ class ApiService {
   }
 
   private determineApiConfig(): ApiConfig {
-    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    const isNative = !!window.Capacitor?.isNativePlatform?.();
     const isDevelopment = import.meta.env.DEV;
     const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true' || import.meta.env.VITE_DEBUG_NETWORK === 'true';
     
@@ -154,7 +154,7 @@ class ApiService {
       } else {
         return { connected: false, error: `HTTP ${response.status}` };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       const latency = Date.now() - startTime;
       
       if (error.name === 'AbortError') {
@@ -308,7 +308,7 @@ class ApiService {
   }
 
   // Enhanced error logging
-  private logNetworkError(error: any): void {
+  private logNetworkError(error: unknown): void {
     if (error instanceof Error) {
       if (error.message.includes('Failed to fetch')) {
         console.error('🚫 Network error: Is the backend running?');
@@ -354,7 +354,7 @@ class ApiService {
     return {
       baseUrl: this.config.baseUrl,
       environment: this.config.debugMode ? 'development' : 'production',
-      platform: !!(window as any).Capacitor?.isNativePlatform?.() ? 'native' : 'web',
+      platform: window.Capacitor?.isNativePlatform?.() ? 'native' : 'web',
       debugMode: this.config.debugMode
     };
   }

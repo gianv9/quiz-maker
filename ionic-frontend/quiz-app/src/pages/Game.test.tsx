@@ -8,10 +8,10 @@ import { mockQuestions } from '../mocks/api';
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual('@ionic/react');
   return {
-    ...(actual as any),
+    ...(actual as Record<string, unknown>),
     IonLoading: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Loading questions...</div> : null),
     IonToast: ({ isOpen, message }: { isOpen: boolean; message: string }) => (isOpen ? <div role="status">{message}</div> : null),
-    IonAlert: ({ isOpen, header, message, buttons }: any) => (isOpen ? <div>{header}{message}</div> : null),
+    IonAlert: ({ isOpen, header, message }: { isOpen: boolean; header: string; message: string; }) => (isOpen ? <div>{header}{message}</div> : null),
   };
 });
 
@@ -36,7 +36,7 @@ const mockHistoryPush = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
-    ...(actual as any),
+    ...(actual as Record<string, unknown>),
     useHistory: () => ({
       push: mockHistoryPush,
     }),
@@ -51,8 +51,8 @@ describe('Game Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Mock successful API calls by default
-    (apiService.getQuestions as any).mockResolvedValue(mockQuestions);
-    (apiService.submitScore as any).mockResolvedValue({ success: true });
+    (apiService.getQuestions as vi.Mock).mockResolvedValue(mockQuestions);
+    (apiService.submitScore as vi.Mock).mockResolvedValue({ success: true });
   });
 
   const renderGame = () => {
@@ -67,13 +67,13 @@ describe('Game Page', () => {
 
   it('should show a loading state initially', async () => {
     // Create a promise that we can control
-    let resolvePromise: (value: any) => void;
-    const controllablePromise = new Promise((resolve) => {
+    let resolvePromise: (value: typeof mockQuestions) => void;
+    const controllablePromise = new Promise<typeof mockQuestions>((resolve) => {
       resolvePromise = resolve;
     });
     
     // Mock getQuestions to return our controllable promise
-    (apiService.getQuestions as any).mockReturnValue(controllablePromise);
+    (apiService.getQuestions as vi.Mock).mockReturnValue(controllablePromise);
     
     // Render the component
     renderGame();
@@ -105,7 +105,7 @@ describe('Game Page', () => {
   });
 
   it('should display an error if questions fail to load', async () => {
-    (apiService.getQuestions as any).mockRejectedValue(new Error('API Error'));
+    (apiService.getQuestions as vi.Mock).mockRejectedValue(new Error('API Error'));
     
     await act(async () => {
       renderGame();

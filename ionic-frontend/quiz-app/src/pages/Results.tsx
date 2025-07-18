@@ -43,7 +43,7 @@ const Results: React.FC = () => {
       const statistics = await apiService.getStats();
       setStats(statistics || []); // Ensure stats is always an array
     } catch (error) {
-      setToastMessage('Failed to load statistics');
+      setToastMessage(`Failed to load statistics : ${error} || 'Please try again.'`);
       setShowToast(true);
       setStats([]); // Set empty array on error
     } finally {

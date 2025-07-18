@@ -1,5 +1,5 @@
 // src/pages/Game.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonContent,
   IonHeader,
@@ -12,8 +12,8 @@ import {
   IonCardTitle,
   IonButton,
   IonProgressBar,
-  IonItem,
-  IonLabel,
+  // IonItem,
+  // IonLabel,
   IonCheckbox,
   IonRadio,
   IonRadioGroup,
@@ -25,7 +25,7 @@ import {
   IonGrid,
   IonRow,
   IonCol,
-  IonList,
+  // IonList,
 } from '@ionic/react';
 import { useParams, useHistory } from 'react-router-dom';
 import { 
@@ -64,21 +64,21 @@ const Game: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const questionCount = urlParams.get('count') || '10';
 
-  useEffect(() => {
-    loadQuestions();
-  }, [topic, difficulty, questionCount]);
-
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     try {
       const questionList = await apiService.getQuestions(topic, difficulty, questionCount);
       setQuestions(questionList);
     } catch (error) {
-      setToastMessage('Failed to load questions. Please try again.');
+      setToastMessage(`Failed to load questions: ${error} || 'Please try again.'`);
       setShowToast(true);
     } finally {
       setLoading(false);
     }
-  };
+  }, [topic, difficulty, questionCount]);
+
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]);
 
   const currentQuestion = questions[currentIndex];
   const isMultipleChoice = currentQuestion?.question_type === 'multiple-choice';
@@ -159,7 +159,7 @@ const Game: React.FC = () => {
       });
       setGameFinished(true);
     } catch (error) {
-      setToastMessage('Failed to save score');
+      setToastMessage(`Failed to save score: ${error} || 'Please try again.'`);
       setShowToast(true);
       setGameFinished(true);
     }

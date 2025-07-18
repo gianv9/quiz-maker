@@ -31,7 +31,7 @@ import './Home.css';
 const Home: React.FC = () => {
   const history = useHistory();
   const [topics, setTopics] = useState<string[]>([]);
-  const [selectedTopic, setSelectedTopic] = useState<string>('');
+  // const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('medium');
   const [questionCount, setQuestionCount] = useState<string>('10');
   const [loading, setLoading] = useState(true);
@@ -49,7 +49,7 @@ const Home: React.FC = () => {
       const topicList = await apiService.getTopics();
       setTopics(topicList);
     } catch (error) {
-      setToastMessage('Failed to load topics. Using default topics.');
+      setToastMessage(`Failed to load topics: ${error}. || 'Please try again.'`);
       setShowToast(true);
       // Set default topics if API fails
       setTopics(['aws-shared-responsibility', 'aws-services', 'aws-storage', 'aws-security', 'aws-well-architected']);
@@ -104,7 +104,7 @@ const Home: React.FC = () => {
       setDebugResult(`✅ All tests passed!\n\nConfig: ${JSON.stringify(config, null, 2)}\n\nTopics: ${topicsResult.length} found\nQuestions: ${questionsResult.length} found\n\nFirst question: ${questionsResult[0]?.question?.substring(0, 100)}...`);
       setShowDebugAlert(true);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Debug test failed:', error);
       setDebugResult(`❌ Debug test failed!\n\nError: ${error.message}\n\nConfig: ${JSON.stringify(apiService.getConfig(), null, 2)}\n\nCheck console for detailed logs.`);
       setShowDebugAlert(true);
@@ -141,7 +141,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* Debug Section - Only show in development */}
-        {(!!(window as any).Capacitor?.isNativePlatform?.() || import.meta.env.DEV) && (
+        {(!!window.Capacitor?.isNativePlatform?.() || import.meta.env.DEV) && (
           <IonCard className="debug-card" style={{margin: '16px', border: '2px dashed #ff6b6b'}}>
             <IonCardHeader>
               <IonCardTitle style={{color: '#ff6b6b', fontSize: '0.9rem'}}>
@@ -174,7 +174,7 @@ const Home: React.FC = () => {
               <IonLabel>Difficulty Level</IonLabel>
                 <IonSelect
                 value={selectedDifficulty}
-                onIonChange={(e: any) => setSelectedDifficulty(e.detail.value)}
+                onIonChange={(e) => setSelectedDifficulty(e.detail.value)}
                 interface="popover"
                 data-testid="difficulty-select"
                 >
@@ -188,7 +188,7 @@ const Home: React.FC = () => {
               <IonLabel>Number of Questions</IonLabel>
                 <IonSelect
                 value={questionCount}
-                onIonChange={(e: any) => setQuestionCount(e.detail.value)}
+                onIonChange={(e) => setQuestionCount(e.detail.value)}
                 interface="popover"
                 >
                 <IonSelectOption value="5">5 Questions</IonSelectOption>

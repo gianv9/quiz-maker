@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
-import { apiService } from './services/api';
+// import { apiService } from './services/api';
 
 // Mock apiService for App.test.tsx
 vi.mock('./services/api', () => ({
@@ -21,7 +21,7 @@ vi.mock('@ionic/react', async () => {
     ...actual,
     IonLoading: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Loading topics...</div> : null),
     IonToast: ({ isOpen, message }: { isOpen: boolean; message: string }) => (isOpen ? <div>{message}</div> : null),
-    IonAlert: ({ isOpen, header, message, buttons }: any) => (isOpen ? <div>{header}{message}</div> : null),
+    IonAlert: ({ isOpen, header, message }: { isOpen: boolean; header: string; message: string; }) => (isOpen ? <div>{header}{message}</div> : null),
   };
 });
 

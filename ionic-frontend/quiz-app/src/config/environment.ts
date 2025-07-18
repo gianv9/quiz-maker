@@ -5,7 +5,7 @@ interface AppConfig {
 
 const getConfig = (): AppConfig => {
   const isDev = import.meta.env.DEV;
-  const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.();
+  const isCapacitor = !!window.Capacitor?.isNativePlatform?.();
   
   const config = {
     baseUrl: isDev && isCapacitor 
